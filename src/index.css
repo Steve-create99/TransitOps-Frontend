@@ -1,0 +1,227 @@
+/* ==========================================================
+   TransitOps — Global Stylesheet
+   Purpose : Tailwind CSS v4 entry + design system tokens
+   Author  : TransitOps Dev Team
+   Date    : 2026
+   ========================================================== */
+
+/* ── Tailwind CSS v4 single import ──────────────────────── */
+@import "tailwindcss";
+
+/* ── Google Fonts — Inter ───────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* ── TransitOps Design Tokens (Tailwind v4 CSS-first config) */
+@theme {
+  /* Brand colors */
+  --color-primary:   #1D9E75;
+  --color-secondary: #0A1628;
+
+  /* Status colors */
+  --color-status-active:   #1D9E75;
+  --color-status-delayed:  #EF9F27;
+  --color-status-critical: #D85A30;
+
+  /* Surface colors */
+  --color-surface:          #0F1E35;
+  --color-surface-light:    #162438;
+  --color-surface-border:   #1E3048;
+
+  /* Typography */
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  /* Sidebar width */
+  --width-sidebar: 260px;
+}
+
+/* ── CSS Custom Properties (for inline style usage) ─────── */
+:root {
+  --sidebar-width: 260px;
+}
+
+/* ── Reset & Base Styles ─────────────────────────────────── */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    min-height: 100vh;
+    background-color: #0A1628;  /* secondary */
+    color: #f1f5f9;             /* slate-100 */
+    line-height: 1.6;
+  }
+
+  #root {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+/* ── Component Layer — Reusable Classes ─────────────────── */
+@layer components {
+
+  /* ── Buttons ──────────────────────────────────────────── */
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    font-size: 0.875rem;
+    background-color: #1D9E75;
+    color: #ffffff;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    text-decoration: none;
+  }
+
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-primary:active { transform: scale(0.97); }
+
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: #cbd5e1;               /* slate-300 */
+    border: 1px solid #1E3048;   /* surface-border */
+    background: transparent;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s, transform 0.1s;
+    text-decoration: none;
+  }
+
+  .btn-ghost:hover {
+    background-color: #162438;   /* surface-light */
+    color: #f8fafc;              /* slate-50 */
+  }
+
+  .btn-ghost:active { transform: scale(0.97); }
+
+  /* ── Cards ────────────────────────────────────────────── */
+  .card {
+    background-color: #0F1E35;   /* surface */
+    border-radius: 0.75rem;
+    border: 1px solid #1E3048;   /* surface-border */
+    padding: 1.25rem;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+  }
+
+  .card-light {
+    background-color: #162438;   /* surface-light */
+    border-radius: 0.75rem;
+    border: 1px solid #1E3048;
+    padding: 1.25rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+  }
+
+  /* ── Status Badges ────────────────────────────────────── */
+  .badge-active {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.125rem 0.625rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    background-color: rgba(29,158,117,0.15);
+    color: #1D9E75;
+  }
+
+  .badge-delayed {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.125rem 0.625rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    background-color: rgba(239,159,39,0.15);
+    color: #EF9F27;
+  }
+
+  .badge-critical {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.125rem 0.625rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    background-color: rgba(216,90,48,0.15);
+    color: #D85A30;
+  }
+
+  /* ── Form Input ───────────────────────────────────────── */
+  .input {
+    width: 100%;
+    padding: 0.625rem 1rem;
+    border-radius: 0.5rem;
+    background-color: #0F1E35;
+    border: 1px solid #1E3048;
+    color: #f1f5f9;
+    font-size: 0.875rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+    font-family: inherit;
+  }
+
+  .input::placeholder { color: #64748b; } /* slate-500 */
+
+  .input:focus {
+    border-color: #1D9E75;
+    box-shadow: 0 0 0 2px rgba(29,158,117,0.2);
+  }
+
+  /* ── Section typography ───────────────────────────────── */
+  .section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #f1f5f9;
+    letter-spacing: -0.01em;
+    display: flex;
+    align-items: center;
+  }
+
+  .section-subtitle {
+    font-size: 0.875rem;
+    color: #94a3b8;  /* slate-400 */
+    margin-top: 0.125rem;
+  }
+}
+
+/* ── Utility Layer — Custom Helpers ─────────────────────── */
+@layer utilities {
+  /* Thin scrollbar for sidebar and overflow tables */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #1E3048 transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar       { width: 4px; }
+  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: #1E3048;
+    border-radius: 9999px;
+  }
+}
