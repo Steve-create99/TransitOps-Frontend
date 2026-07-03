@@ -1,130 +1,513 @@
 // ============================================================
-// Login/index.jsx — Authentication page
+// Login/index.jsx — Authentication page (Sign In / Sign Up)
 // Author  : TransitOps Dev Team
 // Date    : 2026
 // ============================================================
 
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { TruckIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import { useNavigate } from 'react-router-dom';
+import {
+  TruckIcon,
+  EyeIcon,
+  EyeSlashIcon,
+  EnvelopeIcon,
+  LockClosedIcon,
+  UserIcon,
+  BriefcaseIcon,
+  ChevronDownIcon,
+  MapIcon,
+  ChartBarIcon,
+  ClockIcon,
+} from '@heroicons/react/24/outline';
 
-/**
- * Login — email + password form.
- * On submit, navigates to /dashboard (auth logic to be wired in Phase 2).
- */
+// ── Background Grid Styling Constants ───────────────────────
+const diagonalGridStyle = {
+  backgroundImage: `
+    linear-gradient(45deg, rgba(255, 255, 255, 0.03) 25%, transparent 25%), 
+    linear-gradient(-45deg, rgba(255, 255, 255, 0.03) 25%, transparent 25%), 
+    linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.03) 75%), 
+    linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.03) 75%)
+  `,
+  backgroundSize: '40px 40px',
+  backgroundPosition: '0 0, 0 20px, 20px 20px, 20px 0',
+};
+
+const dotGridStyle = {
+  backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.05) 1px, transparent 0)',
+  backgroundSize: '24px 24px',
+};
+
 export default function Login() {
   const navigate = useNavigate();
 
-  // Form state
-  const [email,    setEmail]    = useState('');
-  const [password, setPassword] = useState('');
-  const [showPwd,  setShowPwd]  = useState(false);  // Toggle password visibility
-  const [loading,  setLoading]  = useState(false);
+  // View state: 'signin' or 'signup'
+  const [viewMode, setViewMode] = useState('signin');
 
-  // Handle form submit — simulates login for now
-  function handleSubmit(e) {
-    e.preventDefault();          // Prevent page reload
+  // Common form states
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPwd, setShowPwd] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  // Sign up specific form states
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [role, setRole] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showConfirmPwd, setShowConfirmPwd] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+
+  // Evaluate password strength metrics
+  const getPasswordStrength = (val) => {
+    if (val.length === 0) return { label: 'Weak', score: 0, color: '#ba1a1a' };
+    if (val.length < 6) return { label: 'Weak', score: 1, color: '#ba1a1a' };
+    if (val.length < 10) return { label: 'Fair', score: 2, color: '#EF9F27' };
+    if (val.length < 14) return { label: 'Good', score: 3, color: '#008560' };
+    return { label: 'Strong', score: 4, color: '#1D9E75' };
+  };
+
+  const strength = getPasswordStrength(password);
+
+  // Handle form sign-in submission
+  const handleSignIn = (e) => {
+    e.preventDefault();
+    if (!email || !password) return;
     setLoading(true);
 
-    // Simulate async login with 800ms delay, then go to dashboard
+    // Simulate authentication lag
     setTimeout(() => {
       setLoading(false);
       navigate('/dashboard');
-    }, 800);
-  }
+    }, 850);
+  };
+
+  // Handle form registration submission
+  const handleSignUp = (e) => {
+    e.preventDefault();
+    if (!email || !password || !firstName || !lastName || !role) return;
+    if (password !== confirmPassword) {
+      alert('Passwords do not match.');
+      return;
+    }
+    setLoading(true);
+
+    // Simulate account registration
+    setTimeout(() => {
+      setLoading(false);
+      alert('Account registered successfully. Please Sign In.');
+      setViewMode('signin');
+    }, 1000);
+  };
 
   return (
-    <div className="min-h-screen bg-secondary flex items-center justify-center px-4 relative overflow-hidden">
+    <div className="min-h-screen w-full flex bg-[#f9f9ff] overflow-hidden font-sans">
+      
+      {/* ── Left Column: Branding & Atmosphere ────────────────── */}
+      <aside className="hidden lg:flex w-1/2 bg-[#0A1628] flex-col relative items-center justify-center p-12 overflow-hidden shrink-0">
+        
+        {/* Background Dot Matrix Pattern */}
+        <div className="absolute inset-0 pointer-events-none" style={dotGridStyle} />
+        {/* Background Diagonal Accent Pattern */}
+        <div className="absolute inset-0 opacity-40 pointer-events-none" style={diagonalGridStyle} />
 
-      {/* ── Background decorative blobs ───────────────────── */}
-      <div aria-hidden="true"
-           className="absolute top-0 left-0 w-80 h-80 bg-primary/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
-      <div aria-hidden="true"
-           className="absolute bottom-0 right-0 w-80 h-80 bg-primary/5 rounded-full blur-3xl translate-x-1/3 translate-y-1/3" />
-
-      {/* ── Login Card ────────────────────────────────────── */}
-      <div className="relative z-10 w-full max-w-md">
-
-        {/* Brand header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex w-14 h-14 rounded-xl bg-primary/20 border border-primary/30
-                          items-center justify-center mb-4 shadow-lg shadow-primary/10">
-            <TruckIcon className="w-7 h-7 text-primary" />
+        {/* Dynamic Center Branding Content */}
+        <div className="relative z-10 flex flex-col items-center text-center max-w-md">
+          
+          {/* Brand Mark */}
+          <div className="mb-6 flex flex-col items-center">
+            <div className="w-[52px] h-[52px] bg-primary flex items-center justify-center rounded-full mb-4 shadow-lg shadow-primary/20">
+              <TruckIcon className="w-7 h-7 text-white" />
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight text-white font-mono">TransitOps</h1>
+            <p className="text-slate-400 text-xs mt-1 tracking-wider uppercase">Accra Metro Transit Authority</p>
+            <div className="w-16 h-0.5 bg-primary mt-4" />
           </div>
-          <h1 className="text-2xl font-bold text-white">Welcome back</h1>
-          <p className="text-slate-400 text-sm mt-1">Sign in to TransitOps</p>
+
+          {/* View specific highlights panel */}
+          {viewMode === 'signin' ? (
+            <div className="w-full mt-6 space-y-6">
+              <p className="text-sm text-slate-400 max-w-sm mx-auto leading-relaxed">
+                Unified Operations Management Portal for scheduling, routing, and live tracking.
+              </p>
+              
+              <ul className="space-y-4 text-left mt-8 w-full max-w-xs mx-auto">
+                <li className="flex items-center gap-3.5">
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
+                    <MapIcon className="w-4.5 h-4.5 text-primary" />
+                  </div>
+                  <span className="text-sm text-slate-300">Manage routes and stops in real time</span>
+                </li>
+                <li className="flex items-center gap-3.5">
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
+                    <ChartBarIcon className="w-4.5 h-4.5 text-primary" />
+                  </div>
+                  <span className="text-sm text-slate-300">Monitor network performance at a glance</span>
+                </li>
+                <li className="flex items-center gap-3.5">
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
+                    <ClockIcon className="w-4.5 h-4.5 text-primary" />
+                  </div>
+                  <span className="text-sm text-slate-300">Schedule and track all bus runs</span>
+                </li>
+              </ul>
+            </div>
+          ) : (
+            <div className="w-full mt-6 flex flex-col items-center">
+              <h2 className="text-sm font-medium text-slate-300 opacity-90 max-w-sm mb-8 leading-relaxed">
+                Unified Operations Management for the Accra Metro Transit Authority.
+              </h2>
+              
+              {/* Control center graphics panel */}
+              <div className="relative w-full max-w-sm aspect-square rounded-2xl overflow-hidden shadow-2xl border border-white/10">
+                <img
+                  className="w-full h-full object-cover"
+                  alt="Accra modern transit command center monitoring desks"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuBm_4V9XrVsUwGl2fg7GujMe57RtmqP8pyh5qkoJf9ntMsROfcPhjiK8PCMfBIWUotKr1-327mK1w_r9fJd7oITLOk9SVwG1DGQ4CihOdBNk7SDbcOqjCQ1Qcue0iPNsA6r63oWb2zsX-1v5xK4CEZgRYAxNx3rDoaHPjDPh3G2ust_4urowNqKbsUc-AyiqMDPpgYVXp3CuEc2bmM8KLrfxBwEF0l7VBejdtK0Pd9T1yGeF3UX4Duz2YNTK6qsO_WgPIUMKFwiY2k"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0A1628] via-[#0A1628]/30 to-transparent" />
+                <div className="absolute bottom-5 left-5 right-5 text-left">
+                  <p className="text-[9px] text-primary font-bold uppercase tracking-widest mb-1">Infrastructure Hub</p>
+                  <p className="text-white text-xs italic leading-relaxed opacity-90">
+                    "Ensuring every journey across the city is seamless, safe, and on schedule."
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Fixed Footer */}
+          <div className="mt-12 text-center">
+            <p className="text-[11px] text-slate-500">
+              © 2026 TransitOps · Accra Metro Transit Authority
+            </p>
+          </div>
+
         </div>
 
-        {/* Form card */}
-        <form
-          onSubmit={handleSubmit}
-          className="card space-y-5"
-          noValidate
-        >
-          {/* Email field */}
-          <div>
-            <label htmlFor="login-email" className="block text-sm font-medium text-slate-300 mb-1.5">
-              Email address
-            </label>
-            <input
-              id="login-email"
-              type="email"
-              autoComplete="email"
-              required
-              placeholder="operator@transitops.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="input"
-            />
-          </div>
+      </aside>
 
-          {/* Password field */}
-          <div>
-            <label htmlFor="login-password" className="block text-sm font-medium text-slate-300 mb-1.5">
-              Password
-            </label>
-            <div className="relative">
-              <input
-                id="login-password"
-                type={showPwd ? 'text' : 'password'}  // Toggle visibility
-                autoComplete="current-password"
-                required
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="input pr-10"
-              />
-              {/* Show / hide password toggle */}
+      {/* ── Right Column: Sign In / Sign Up Forms ────────────── */}
+      <main className="flex-1 bg-white flex flex-col items-center justify-center px-6 py-12 overflow-y-auto scrollbar-thin">
+        <div className="w-full max-w-[420px] flex flex-col">
+          
+          {/* Dynamic Headers */}
+          <header className="mb-8">
+            <span className="text-[10px] font-bold text-primary tracking-[0.2em] block mb-3 uppercase">
+              STAFF PORTAL
+            </span>
+            <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
+              {viewMode === 'signin' ? 'Welcome back' : 'Create your account'}
+            </h2>
+            <p className="text-sm text-slate-500 mt-1.5">
+              {viewMode === 'signin'
+                ? 'Sign in to your TransitOps account'
+                : 'Join the TransitOps staff platform'}
+            </p>
+          </header>
+
+          {/* Form renders dynamically */}
+          {viewMode === 'signin' ? (
+            
+            /* ──────────────── Sign In View ──────────────── */
+            <form onSubmit={handleSignIn} className="space-y-5">
+              
+              {/* Email Input */}
+              <div className="flex flex-col">
+                <label className="text-xs font-semibold text-slate-700 mb-2" htmlFor="email">
+                  Email address
+                </label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                    <EnvelopeIcon className="h-5 w-5 text-slate-400 group-focus-within:text-primary transition-colors" />
+                  </div>
+                  <input
+                    id="email"
+                    type="email"
+                    required
+                    placeholder="you@transitops.gh"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full h-12 pl-11 pr-4 border border-slate-200 rounded-lg text-sm placeholder-slate-400 focus:outline-none focus:border-primary transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Password Input */}
+              <div className="flex flex-col">
+                <label className="text-xs font-semibold text-slate-700 mb-2" htmlFor="password">
+                  Password
+                </label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                    <LockClosedIcon className="h-5 w-5 text-slate-400 group-focus-within:text-primary transition-colors" />
+                  </div>
+                  <input
+                    id="password"
+                    type={showPwd ? 'text' : 'password'}
+                    required
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full h-12 pl-11 pr-12 border border-slate-200 rounded-lg text-sm placeholder-slate-400 focus:outline-none focus:border-primary transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPwd((prev) => !prev)}
+                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-primary transition-colors"
+                  >
+                    {showPwd ? (
+                      <EyeSlashIcon className="h-5 w-5" />
+                    ) : (
+                      <EyeIcon className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Remember Me & Forgot Password */}
+              <div className="flex items-center justify-between text-xs">
+                <label className="flex items-center gap-2 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="h-4.5 w-4.5 rounded border-slate-200 text-primary focus:ring-primary/20 transition-all cursor-pointer"
+                  />
+                  <span className="text-slate-500 group-hover:text-slate-800 transition-colors">
+                    Remember me
+                  </span>
+                </label>
+                <a href="#" className="font-semibold text-primary hover:underline transition-all">
+                  Forgot password?
+                </a>
+              </div>
+
+              {/* Submit Button */}
               <button
-                type="button"
-                aria-label={showPwd ? 'Hide password' : 'Show password'}
-                onClick={() => setShowPwd((v) => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+                type="submit"
+                disabled={loading}
+                className="w-full h-[50px] bg-primary hover:bg-[#0F6E56] active:scale-[0.98] text-white font-bold text-sm rounded-lg transition-all flex items-center justify-center gap-2 shadow-none disabled:opacity-60"
               >
-                {showPwd
-                  ? <EyeSlashIcon className="w-4 h-4" />
-                  : <EyeIcon      className="w-4 h-4" />
-                }
+                {loading ? 'Signing In...' : 'Sign In'}
               </button>
+
+            </form>
+          ) : (
+            
+            /* ──────────────── Sign Up View ──────────────── */
+            <form onSubmit={handleSignUp} className="space-y-4">
+              
+              {/* Full Name Row */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-semibold text-slate-700">First name</label>
+                  <div className="relative">
+                    <UserIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 h-5 w-5" />
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Kofi"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      className="w-full h-12 pl-11 pr-4 border border-slate-200 rounded-lg text-sm placeholder-slate-400 focus:outline-none focus:border-primary transition-all"
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-semibold text-slate-700">Last name</label>
+                  <div className="relative">
+                    <UserIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 h-5 w-5" />
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Mensah"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      className="w-full h-12 pl-11 pr-4 border border-slate-200 rounded-lg text-sm placeholder-slate-400 focus:outline-none focus:border-primary transition-all"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Work Email */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-slate-700">Work email</label>
+                <div className="relative">
+                  <EnvelopeIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 h-5 w-5" />
+                  <input
+                    type="email"
+                    required
+                    placeholder="you@transitops.gh"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full h-12 pl-11 pr-4 border border-slate-200 rounded-lg text-sm placeholder-slate-400 focus:outline-none focus:border-primary transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Role Select Dropdown */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-slate-700">Role</label>
+                <div className="relative">
+                  <BriefcaseIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 h-5 w-5" />
+                  <select
+                    required
+                    value={role}
+                    onChange={(e) => setRole(e.target.value)}
+                    className="w-full h-12 pl-11 pr-10 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-primary bg-white transition-all cursor-pointer appearance-none"
+                  >
+                    <option value="" disabled>Select your role</option>
+                    <option value="Route Manager">Route Manager</option>
+                    <option value="Stop Inspector">Stop Inspector</option>
+                    <option value="Scheduler">Scheduler</option>
+                    <option value="System Admin">System Admin</option>
+                  </select>
+                  <ChevronDownIcon className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 h-4 w-4 pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Password Row */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                {/* Password field */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-semibold text-slate-700">Password</label>
+                  <div className="relative">
+                    <LockClosedIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 h-5 w-5" />
+                    <input
+                      type={showPwd ? 'text' : 'password'}
+                      required
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full h-12 pl-11 pr-10 border border-slate-200 rounded-lg text-sm placeholder-slate-400 focus:outline-none focus:border-primary transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPwd((prev) => !prev)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors"
+                    >
+                      {showPwd ? (
+                        <EyeSlashIcon className="h-5 w-5" />
+                      ) : (
+                        <EyeIcon className="h-5 w-5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Confirm password field */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-semibold text-slate-700">Confirm password</label>
+                  <div className="relative">
+                    <LockClosedIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 h-5 w-5" />
+                    <input
+                      type={showConfirmPwd ? 'text' : 'password'}
+                      required
+                      placeholder="••••••••"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="w-full h-12 pl-11 pr-10 border border-slate-200 rounded-lg text-sm placeholder-slate-400 focus:outline-none focus:border-primary transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPwd((prev) => !prev)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors"
+                    >
+                      {showConfirmPwd ? (
+                        <EyeSlashIcon className="h-5 w-5" />
+                      ) : (
+                        <EyeIcon className="h-5 w-5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Password Strength Indicator */}
+              <div className="space-y-1.5 pt-1">
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4].map((index) => (
+                    <div
+                      key={index}
+                      className="h-1 rounded-full flex-1 transition-all duration-300"
+                      style={{
+                        backgroundColor:
+                          index <= strength.score ? strength.color : '#bccac1',
+                      }}
+                    />
+                  ))}
+                </div>
+                <p className="text-[11px] text-slate-500">
+                  Password strength:{' '}
+                  <span className="font-semibold" style={{ color: strength.color }}>
+                    {strength.label}
+                  </span>
+                </p>
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full h-[50px] bg-primary hover:bg-[#0F6E56] active:scale-[0.98] text-white font-bold text-sm rounded-lg transition-all duration-200 shadow-none disabled:opacity-60 mt-2"
+              >
+                {loading ? 'Creating Account...' : 'Create Account'}
+              </button>
+
+            </form>
+          )}
+
+          {/* Toggle View Mode Footer */}
+          <footer className="mt-8 text-center text-sm">
+            <p className="text-slate-500">
+              {viewMode === 'signin' ? (
+                <>
+                  Don't have an account?{' '}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setViewMode('signup');
+                      setPassword('');
+                    }}
+                    className="text-primary font-bold hover:underline ml-1 cursor-pointer"
+                  >
+                    Sign Up
+                  </button>
+                </>
+              ) : (
+                <>
+                  Already have an account?{' '}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setViewMode('signin');
+                      setPassword('');
+                    }}
+                    className="text-primary font-bold hover:underline ml-1 cursor-pointer"
+                  >
+                    Sign In
+                  </button>
+                </>
+              )}
+            </p>
+          </footer>
+
+          {/* Legal Footer Links (Sign up only or shared bottom) */}
+          {viewMode === 'signup' && (
+            <div className="mt-8 pt-6 border-t border-slate-100 flex justify-center gap-4 text-xs text-slate-400">
+              <a href="#" className="hover:text-primary transition-colors">Privacy Policy</a>
+              <a href="#" className="hover:text-primary transition-colors">Terms of Service</a>
+              <a href="#" className="hover:text-primary transition-colors">Support</a>
             </div>
-          </div>
+          )}
 
-          {/* Submit button */}
-          <button
-            id="login-submit"
-            type="submit"
-            disabled={loading}
-            className="btn-primary w-full justify-center py-2.5 disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Signing in…' : 'Sign In'}
-          </button>
-        </form>
+        </div>
+      </main>
 
-        {/* Back to splash */}
-        <p className="text-center text-slate-500 text-sm mt-6">
-          <Link to="/" className="text-primary hover:underline">← Back to home</Link>
-        </p>
-      </div>
     </div>
   );
 }
+
