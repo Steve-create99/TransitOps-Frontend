@@ -5,17 +5,19 @@
 // ============================================================
 
 import { BrowserRouter } from 'react-router-dom';
+import { AppProvider } from './context/AppContext';
 import AppRouter from './routes/AppRouter';
 
 /**
- * App — wraps the entire application in BrowserRouter and
- * delegates all route rendering to AppRouter.
+ * App — wraps the entire application in AppProvider and BrowserRouter
+ * and delegates all route rendering to AppRouter.
  */
 export default function App() {
   return (
-    // BrowserRouter provides URL-based routing context to the whole app
-    <BrowserRouter>
-      <AppRouter />
-    </BrowserRouter>
+    <AppProvider>
+      <BrowserRouter>
+        <AppRouter />
+      </BrowserRouter>
+    </AppProvider>
   );
 }

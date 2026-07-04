@@ -18,7 +18,11 @@ import {
   MapIcon,
   ChartBarIcon,
   ClockIcon,
+  ExclamationCircleIcon,
+  CheckCircleIcon,
 } from '@heroicons/react/24/outline';
+import { authApi } from '../../services/api';
+import { useAppContext } from '../../context/AppContext';
 
 // ── Background Grid Styling Constants ───────────────────────
 const diagonalGridStyle = {
@@ -37,66 +41,117 @@ const dotGridStyle = {
   backgroundSize: '24px 24px',
 };
 
+// Only two roles are supported — mapped directly to backend enum values
+const ROLES = [
+  { label: 'Admin',  value: 'ADMIN'  },
+  { label: 'Driver', value: 'DRIVER' },
+];
+
 export default function Login() {
   const navigate = useNavigate();
+  const { login } = useAppContext();
 
   // View state: 'signin' or 'signup'
   const [viewMode, setViewMode] = useState('signin');
 
   // Common form states
-  const [email, setEmail] = useState('');
+  const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
-  const [showPwd, setShowPwd] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [showPwd,  setShowPwd]  = useState(false);
+  const [loading,  setLoading]  = useState(false);
 
   // Sign up specific form states
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [role, setRole] = useState('');
+  const [firstName,      setFirstName]      = useState('');
+  const [lastName,       setLastName]       = useState('');
+  const [role,           setRole]           = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showConfirmPwd, setShowConfirmPwd] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
+  const [rememberMe,     setRememberMe]     = useState(false);
+
+  // Feedback states
+  const [error,   setError]   = useState('');
+  const [success, setSuccess] = useState('');
 
   // Evaluate password strength metrics
   const getPasswordStrength = (val) => {
-    if (val.length === 0) return { label: 'Weak', score: 0, color: '#ba1a1a' };
-    if (val.length < 6) return { label: 'Weak', score: 1, color: '#ba1a1a' };
-    if (val.length < 10) return { label: 'Fair', score: 2, color: '#EF9F27' };
-    if (val.length < 14) return { label: 'Good', score: 3, color: '#008560' };
-    return { label: 'Strong', score: 4, color: '#1D9E75' };
+    if (val.length === 0) return { label: 'Weak',   score: 0, color: '#ba1a1a' };
+    if (val.length < 6)   return { label: 'Weak',   score: 1, color: '#ba1a1a' };
+    if (val.length < 10)  return { label: 'Fair',   score: 2, color: '#EF9F27' };
+    if (val.length < 14)  return { label: 'Good',   score: 3, color: '#008560' };
+    return                       { label: 'Strong', score: 4, color: '#1D9E75' };
   };
 
   const strength = getPasswordStrength(password);
 
-  // Handle form sign-in submission
-  const handleSignIn = (e) => {
+  function resetFeedback() {
+    setError('');
+    setSuccess('');
+  }
+
+  // ── Sign In ─────────────────────────────────────────────────
+  const handleSignIn = async (e) => {
     e.preventDefault();
     if (!email || !password) return;
+
+    resetFeedback();
     setLoading(true);
 
-    // Simulate authentication lag
-    setTimeout(() => {
+    try {
+      const data = await authApi.login(email, password);
+      // data: { accessToken, refreshToken, expiresIn, user }
+      login(data.user, {
+        accessToken:  data.accessToken,
+        refreshToken: data.refreshToken,
+        expiresIn:    data.expiresIn,
+      });
+      navigate('/dashboard', { replace: true });
+    } catch (err) {
+      setError(err.message || 'Invalid email or password. Please try again.');
+    } finally {
       setLoading(false);
-      navigate('/dashboard');
-    }, 850);
+    }
   };
 
-  // Handle form registration submission
-  const handleSignUp = (e) => {
+  // ── Sign Up ─────────────────────────────────────────────────
+  const handleSignUp = async (e) => {
     e.preventDefault();
-    if (!email || !password || !firstName || !lastName || !role) return;
-    if (password !== confirmPassword) {
-      alert('Passwords do not match.');
+    resetFeedback();
+
+    if (!firstName || !lastName || !email || !role || !password || !confirmPassword) {
+      setError('Please fill in all fields.');
       return;
     }
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
     setLoading(true);
 
-    // Simulate account registration
-    setTimeout(() => {
-      setLoading(false);
-      alert('Account registered successfully. Please Sign In.');
+    try {
+      // role is already 'ADMIN' or 'DRIVER' — matches backend enum directly
+      await authApi.register(firstName, lastName, email, role, password);
+      setSuccess('Account created! You can now sign in.');
       setViewMode('signin');
-    }, 1000);
+      setPassword('');
+      setConfirmPassword('');
+    } catch (err) {
+      setError(err.message || 'Registration failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Switch view and clear all feedback + shared fields
+  const switchView = (mode) => {
+    setViewMode(mode);
+    setPassword('');
+    setConfirmPassword('');
+    resetFeedback();
   };
 
   return (
@@ -123,7 +178,7 @@ export default function Login() {
             <div className="w-16 h-0.5 bg-primary mt-4" />
           </div>
 
-          {/* View specific highlights panel */}
+          {/* View-specific highlights panel */}
           {viewMode === 'signin' ? (
             <div className="w-full mt-6 space-y-6">
               <p className="text-sm text-slate-400 max-w-sm mx-auto leading-relaxed">
@@ -205,9 +260,23 @@ export default function Login() {
             </p>
           </header>
 
-          {/* Form renders dynamically */}
+          {/* ── Feedback Banners ──────────────────────────────── */}
+          {error && (
+            <div className="flex items-start gap-2.5 mb-5 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+              <ExclamationCircleIcon className="w-5 h-5 shrink-0 mt-0.5" />
+              <span>{error}</span>
+            </div>
+          )}
+          {success && (
+            <div className="flex items-start gap-2.5 mb-5 px-4 py-3 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm">
+              <CheckCircleIcon className="w-5 h-5 shrink-0 mt-0.5" />
+              <span>{success}</span>
+            </div>
+          )}
+
+          {/* Form renders dynamically based on viewMode */}
           {viewMode === 'signin' ? (
-            
+
             /* ──────────────── Sign In View ──────────────── */
             <form onSubmit={handleSignIn} className="space-y-5">
               
@@ -226,7 +295,7 @@ export default function Login() {
                     required
                     placeholder="you@transitops.gh"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => { setEmail(e.target.value); resetFeedback(); }}
                     className="w-full h-12 pl-11 pr-4 border border-slate-200 rounded-lg text-sm placeholder-slate-400 focus:outline-none focus:border-primary transition-all"
                   />
                 </div>
@@ -247,7 +316,7 @@ export default function Login() {
                     required
                     placeholder="Enter your password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => { setPassword(e.target.value); resetFeedback(); }}
                     className="w-full h-12 pl-11 pr-12 border border-slate-200 rounded-lg text-sm placeholder-slate-400 focus:outline-none focus:border-primary transition-all"
                   />
                   <button
@@ -255,11 +324,7 @@ export default function Login() {
                     onClick={() => setShowPwd((prev) => !prev)}
                     className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-primary transition-colors"
                   >
-                    {showPwd ? (
-                      <EyeSlashIcon className="h-5 w-5" />
-                    ) : (
-                      <EyeIcon className="h-5 w-5" />
-                    )}
+                    {showPwd ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
                   </button>
                 </div>
               </div>
@@ -292,8 +357,9 @@ export default function Login() {
               </button>
 
             </form>
+
           ) : (
-            
+
             /* ──────────────── Sign Up View ──────────────── */
             <form onSubmit={handleSignUp} className="space-y-4">
               
@@ -346,7 +412,7 @@ export default function Login() {
                 </div>
               </div>
 
-              {/* Role Select Dropdown */}
+              {/* Role Select — Admin or Driver only */}
               <div className="space-y-1.5">
                 <label className="block text-xs font-semibold text-slate-700">Role</label>
                 <div className="relative">
@@ -358,10 +424,9 @@ export default function Login() {
                     className="w-full h-12 pl-11 pr-10 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-primary bg-white transition-all cursor-pointer appearance-none"
                   >
                     <option value="" disabled>Select your role</option>
-                    <option value="Route Manager">Route Manager</option>
-                    <option value="Stop Inspector">Stop Inspector</option>
-                    <option value="Scheduler">Scheduler</option>
-                    <option value="System Admin">System Admin</option>
+                    {ROLES.map(({ label, value }) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
                   </select>
                   <ChevronDownIcon className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 h-4 w-4 pointer-events-none" />
                 </div>
@@ -378,6 +443,7 @@ export default function Login() {
                     <input
                       type={showPwd ? 'text' : 'password'}
                       required
+                      minLength={8}
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
@@ -388,11 +454,7 @@ export default function Login() {
                       onClick={() => setShowPwd((prev) => !prev)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors"
                     >
-                      {showPwd ? (
-                        <EyeSlashIcon className="h-5 w-5" />
-                      ) : (
-                        <EyeIcon className="h-5 w-5" />
-                      )}
+                      {showPwd ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
                     </button>
                   </div>
                 </div>
@@ -415,11 +477,7 @@ export default function Login() {
                       onClick={() => setShowConfirmPwd((prev) => !prev)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors"
                     >
-                      {showConfirmPwd ? (
-                        <EyeSlashIcon className="h-5 w-5" />
-                      ) : (
-                        <EyeIcon className="h-5 w-5" />
-                      )}
+                      {showConfirmPwd ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
                     </button>
                   </div>
                 </div>
@@ -433,10 +491,7 @@ export default function Login() {
                     <div
                       key={index}
                       className="h-1 rounded-full flex-1 transition-all duration-300"
-                      style={{
-                        backgroundColor:
-                          index <= strength.score ? strength.color : '#bccac1',
-                      }}
+                      style={{ backgroundColor: index <= strength.score ? strength.color : '#bccac1' }}
                     />
                   ))}
                 </div>
@@ -465,13 +520,10 @@ export default function Login() {
             <p className="text-slate-500">
               {viewMode === 'signin' ? (
                 <>
-                  Don't have an account?{' '}
+                  Don&apos;t have an account?{' '}
                   <button
                     type="button"
-                    onClick={() => {
-                      setViewMode('signup');
-                      setPassword('');
-                    }}
+                    onClick={() => switchView('signup')}
                     className="text-primary font-bold hover:underline ml-1 cursor-pointer"
                   >
                     Sign Up
@@ -482,10 +534,7 @@ export default function Login() {
                   Already have an account?{' '}
                   <button
                     type="button"
-                    onClick={() => {
-                      setViewMode('signin');
-                      setPassword('');
-                    }}
+                    onClick={() => switchView('signin')}
                     className="text-primary font-bold hover:underline ml-1 cursor-pointer"
                   >
                     Sign In
@@ -495,7 +544,7 @@ export default function Login() {
             </p>
           </footer>
 
-          {/* Legal Footer Links (Sign up only or shared bottom) */}
+          {/* Legal Footer Links (sign up only) */}
           {viewMode === 'signup' && (
             <div className="mt-8 pt-6 border-t border-slate-100 flex justify-center gap-4 text-xs text-slate-400">
               <a href="#" className="hover:text-primary transition-colors">Privacy Policy</a>
@@ -510,4 +559,3 @@ export default function Login() {
     </div>
   );
 }
-

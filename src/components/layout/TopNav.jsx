@@ -11,6 +11,7 @@ import {
   BellIcon,
   UserCircleIcon,
 } from '@heroicons/react/24/outline';
+import { useAppContext } from '../../context/AppContext';
 
 // ── Page title map — maps route paths to display titles ─────
 const PAGE_TITLES = {
@@ -18,21 +19,28 @@ const PAGE_TITLES = {
   '/routes':        'Routes',
   '/stops':         'Stops',
   '/schedules':     'Schedules',
+  '/maps':          'Maps',
   '/notifications': 'Notifications',
-  '/empty':         'Empty State',
+  '/reports':       'Reports',
+  '/drivers':       'Driver Management',
+  '/vehicles':      'Vehicle Fleet',
   '/settings':      'Settings',
+  '/empty':         'Empty State',
 };
 
 /**
  * TopNav — fixed horizontal bar at the top of every app page.
- * Shows the current page title and search / user controls.
+ * Shows the current page title and the logged-in user's full name.
  */
 export default function TopNav() {
-  const { pathname } = useLocation();  // Get current route
+  const { pathname } = useLocation();
+  const { user }     = useAppContext();
   const [searchValue, setSearchValue] = useState('');
 
-  // Derive the current page title from the route path
-  const pageTitle = PAGE_TITLES[pathname] ?? 'TransitOps';
+  const pageTitle   = PAGE_TITLES[pathname] ?? 'TransitOps';
+  const displayName = user
+    ? [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email || 'Operator'
+    : 'Operator';
 
   return (
     <header
@@ -42,7 +50,6 @@ export default function TopNav() {
         bg-secondary/80 backdrop-blur-md
         border-b border-surface-border
       "
-      /* Offset left by sidebar width so it doesn't overlap */
       style={{ left: 'var(--sidebar-width, 260px)' }}
     >
       {/* ── Page Title ──────────────────────────────────── */}
@@ -70,7 +77,7 @@ export default function TopNav() {
 
       {/* ── Right Controls ──────────────────────────────── */}
       <div className="flex items-center gap-3">
-        {/* Notification bell with unread dot */}
+        {/* Notification bell */}
         <button
           id="topnav-notifications"
           type="button"
@@ -79,11 +86,10 @@ export default function TopNav() {
                      hover:text-slate-100 transition-colors duration-200"
         >
           <BellIcon className="w-5 h-5" />
-          {/* Unread indicator */}
           <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-status-critical" />
         </button>
 
-        {/* User avatar */}
+        {/* User avatar with real name */}
         <button
           id="topnav-user-menu"
           type="button"
@@ -93,7 +99,7 @@ export default function TopNav() {
                      transition-colors duration-200"
         >
           <UserCircleIcon className="w-7 h-7 text-slate-400" />
-          <span className="text-sm text-slate-300 hidden lg:block">Operator</span>
+          <span className="text-sm text-slate-300 hidden lg:block">{displayName}</span>
         </button>
       </div>
     </header>
