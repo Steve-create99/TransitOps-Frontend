@@ -296,7 +296,7 @@ export default function Login() {
                     placeholder="you@transitops.gh"
                     value={email}
                     onChange={(e) => { setEmail(e.target.value); resetFeedback(); }}
-                    className="w-full h-12 pl-11 pr-4 border border-slate-200 rounded-lg text-sm placeholder-slate-400 focus:outline-none focus:border-primary transition-all"
+                    className="w-full h-12 pl-11 pr-4 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-primary transition-all"
                   />
                 </div>
               </div>
@@ -317,7 +317,7 @@ export default function Login() {
                     placeholder="Enter your password"
                     value={password}
                     onChange={(e) => { setPassword(e.target.value); resetFeedback(); }}
-                    className="w-full h-12 pl-11 pr-12 border border-slate-200 rounded-lg text-sm placeholder-slate-400 focus:outline-none focus:border-primary transition-all"
+                    className="w-full h-12 pl-11 pr-12 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-primary transition-all"
                   />
                   <button
                     type="button"
@@ -375,7 +375,7 @@ export default function Login() {
                       placeholder="e.g. Kofi"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
-                      className="w-full h-12 pl-11 pr-4 border border-slate-200 rounded-lg text-sm placeholder-slate-400 focus:outline-none focus:border-primary transition-all"
+                      className="w-full h-12 pl-11 pr-4 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-primary transition-all"
                     />
                   </div>
                 </div>
@@ -390,7 +390,7 @@ export default function Login() {
                       placeholder="e.g. Mensah"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
-                      className="w-full h-12 pl-11 pr-4 border border-slate-200 rounded-lg text-sm placeholder-slate-400 focus:outline-none focus:border-primary transition-all"
+                      className="w-full h-12 pl-11 pr-4 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-primary transition-all"
                     />
                   </div>
                 </div>
@@ -407,7 +407,7 @@ export default function Login() {
                     placeholder="you@transitops.gh"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full h-12 pl-11 pr-4 border border-slate-200 rounded-lg text-sm placeholder-slate-400 focus:outline-none focus:border-primary transition-all"
+                    className="w-full h-12 pl-11 pr-4 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-primary transition-all"
                   />
                 </div>
               </div>
@@ -447,7 +447,7 @@ export default function Login() {
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full h-12 pl-11 pr-10 border border-slate-200 rounded-lg text-sm placeholder-slate-400 focus:outline-none focus:border-primary transition-all"
+                      className="w-full h-12 pl-11 pr-10 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-primary transition-all"
                     />
                     <button
                       type="button"
@@ -470,7 +470,7 @@ export default function Login() {
                       placeholder="••••••••"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full h-12 pl-11 pr-10 border border-slate-200 rounded-lg text-sm placeholder-slate-400 focus:outline-none focus:border-primary transition-all"
+                      className="w-full h-12 pl-11 pr-10 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-primary transition-all"
                     />
                     <button
                       type="button"
