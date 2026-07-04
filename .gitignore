@@ -49,3 +49,5 @@ desktop.ini
 # ── Cursor / Antigravity ─────────────────────────────────────
 .antigravity/
 .antigravity
+
+.env
