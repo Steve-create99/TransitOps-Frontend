@@ -133,12 +133,17 @@ export default function Login() {
     setLoading(true);
 
     try {
-      // role is already 'ADMIN' or 'DRIVER' — matches backend enum directly
+      // Register the account
       await authApi.register(firstName, lastName, email, role, password);
-      setSuccess('Account created! You can now sign in.');
-      setViewMode('signin');
-      setPassword('');
-      setConfirmPassword('');
+
+      // Auto-login with the same credentials immediately after registration
+      const data = await authApi.login(email, password);
+      login(data.user, {
+        accessToken:  data.accessToken,
+        refreshToken: data.refreshToken,
+        expiresIn:    data.expiresIn,
+      });
+      navigate('/dashboard', { replace: true });
     } catch (err) {
       setError(err.message || 'Registration failed. Please try again.');
     } finally {
@@ -444,7 +449,7 @@ export default function Login() {
                       type={showPwd ? 'text' : 'password'}
                       required
                       minLength={8}
-                      placeholder="••••••••"
+                      placeholder="Min. 8 characters"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="w-full h-12 pl-11 pr-10 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-primary transition-all"
@@ -467,7 +472,7 @@ export default function Login() {
                     <input
                       type={showConfirmPwd ? 'text' : 'password'}
                       required
-                      placeholder="••••••••"
+                      placeholder="Re-enter password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       className="w-full h-12 pl-11 pr-10 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-primary transition-all"
