@@ -21,7 +21,7 @@ import {
   ExclamationCircleIcon,
   CheckCircleIcon,
 } from '@heroicons/react/24/outline';
-import { authApi } from '../../services/api';
+import { authApi, normalizeAuthResponse } from '../../services/api';
 import { useAppContext } from '../../context/AppContext';
 
 // ── Background Grid Styling Constants ───────────────────────
@@ -97,13 +97,12 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const data = await authApi.login(email, password);
-      // data: { accessToken, refreshToken, expiresIn, user }
-      login(data.user, {
-        accessToken:  data.accessToken,
-        refreshToken: data.refreshToken,
-        expiresIn:    data.expiresIn,
-      });
+      const raw = await authApi.login(email, password);
+      const { accessToken, refreshToken, expiresIn, user } = normalizeAuthResponse(raw);
+
+      if (!accessToken) throw new Error('No token received from server.');
+
+      login(user, { accessToken, refreshToken, expiresIn });
       navigate('/dashboard', { replace: true });
     } catch (err) {
       setError(err.message || 'Invalid email or password. Please try again.');
@@ -133,16 +132,15 @@ export default function Login() {
     setLoading(true);
 
     try {
-      // Register the account
+      // Register the account, then immediately sign in
       await authApi.register(firstName, lastName, email, role, password);
 
-      // Auto-login with the same credentials immediately after registration
-      const data = await authApi.login(email, password);
-      login(data.user, {
-        accessToken:  data.accessToken,
-        refreshToken: data.refreshToken,
-        expiresIn:    data.expiresIn,
-      });
+      const raw = await authApi.login(email, password);
+      const { accessToken, refreshToken, expiresIn, user } = normalizeAuthResponse(raw);
+
+      if (!accessToken) throw new Error('Account created but sign-in failed. Please sign in manually.');
+
+      login(user, { accessToken, refreshToken, expiresIn });
       navigate('/dashboard', { replace: true });
     } catch (err) {
       setError(err.message || 'Registration failed. Please try again.');

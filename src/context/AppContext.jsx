@@ -5,50 +5,54 @@
 // ============================================================
 
 import { createContext, useContext, useState, useEffect } from 'react';
-import { getUser, saveSession, clearSession, authApi } from '../services/api';
+import { getUser, getAccessToken, saveSession, clearSession, authApi } from '../services/api';
 
-// Create context object
 const AppContext = createContext(null);
 
 /**
- * AppProvider — wraps the app and provides global state.
+ * Derive the initial user on mount.
+ * If a user object is stored we use it; otherwise, if an access token
+ * exists we create a minimal sentinel so PrivateRoute lets the user in
+ * (they're authenticated — we just don't have profile details yet).
  */
-export function AppProvider({ children }) {
-  // Current authenticated user (initialized from localStorage)
-  const [user, setUser] = useState(getUser);
+function resolveInitialUser() {
+  const stored = getUser();
+  if (stored) return stored;
+  // Token present but no user object — treat as authenticated with unknown profile
+  if (getAccessToken()) return { email: null, firstName: null, lastName: null, role: null };
+  return null;
+}
 
-  // Global notification count
+export function AppProvider({ children }) {
+  const [user, setUser] = useState(resolveInitialUser);
   const [notificationCount, setNotificationCount] = useState(2);
 
-  // Listen to token-expiration logout events dispatched from api.js
+  // Handle token-expiry logout events fired from api.js
   useEffect(() => {
-    const handleLogoutEvent = () => {
-      setUser(null);
-    };
-
-    window.addEventListener('auth-logout', handleLogoutEvent);
-    return () => {
-      window.removeEventListener('auth-logout', handleLogoutEvent);
-    };
+    const onAuthLogout = () => setUser(null);
+    window.addEventListener('auth-logout', onAuthLogout);
+    return () => window.removeEventListener('auth-logout', onAuthLogout);
   }, []);
 
   /**
-   * handleLogin — updates state and saves session to localStorage
+   * handleLogin — called after a successful /auth/login response.
+   * userData may be null if the backend doesn't return a user object;
+   * in that case we store a minimal sentinel so the route guard passes.
    */
   const handleLogin = (userData, tokens) => {
     saveSession(tokens.accessToken, tokens.refreshToken, tokens.expiresIn, userData);
-    setUser(userData);
+    // Always set a non-null user so PrivateRoute knows the user is authenticated
+    setUser(userData ?? { email: null, firstName: null, lastName: null, role: null });
   };
 
   /**
-   * handleLogout — revokes backend session, cleans localStorage, and updates state
+   * handleLogout — best-effort server revocation, then full local clear.
    */
   const handleLogout = async () => {
     try {
-      // Best effort logout on the backend
       await authApi.logout();
     } catch (e) {
-      console.warn('Backend logout failed or was already revoked:', e);
+      console.warn('Backend logout failed (token may already be revoked):', e.message);
     } finally {
       clearSession();
       setUser(null);
@@ -57,23 +61,15 @@ export function AppProvider({ children }) {
 
   const value = {
     user,
-    login: handleLogin,
+    login:  handleLogin,
     logout: handleLogout,
     notificationCount,
     setNotificationCount,
   };
 
-  return (
-    <AppContext.Provider value={value}>
-      {children}
-    </AppContext.Provider>
-  );
+  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
 
-/**
- * useAppContext — custom hook for consuming AppContext.
- * Throws if used outside of AppProvider.
- */
 export function useAppContext() {
   const ctx = useContext(AppContext);
   if (!ctx) throw new Error('useAppContext must be used inside <AppProvider>');

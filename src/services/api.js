@@ -4,73 +4,110 @@
 // Date    : 2026
 // ============================================================
 
-const VITE_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-const BASE_URL = VITE_API_URL.endsWith('/api') ? VITE_API_URL : `${VITE_API_URL}/api`;
+// Use a relative path so the Vite proxy handles routing in dev,
+// and VITE_API_URL can be set to the full backend URL in production.
+const BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
-// ── Token Storage Helpers ────────────────────────────────────
-export function getAccessToken() {
-  return localStorage.getItem('accessToken');
-}
+// ── JWT Utilities ────────────────────────────────────────────
 
-export function getRefreshToken() {
-  return localStorage.getItem('refreshToken');
-}
-
-export function getExpiresAt() {
-  const expiresAt = localStorage.getItem('expiresAt');
-  return expiresAt ? parseInt(expiresAt, 10) : null;
-}
-
-export function getUser() {
-  const userStr = localStorage.getItem('user');
+/**
+ * Decode the base64url-encoded payload of a JWT without verification.
+ * Used only for extracting non-sensitive claims (name, email, role).
+ */
+function decodeJwtPayload(token) {
   try {
-    return userStr ? JSON.parse(userStr) : null;
-  } catch (e) {
+    const b64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    return JSON.parse(atob(b64));
+  } catch {
     return null;
   }
 }
 
-export function saveSession(accessToken, refreshToken, expiresIn, user) {
-  if (accessToken) localStorage.setItem('accessToken', accessToken);
-  if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
-  
-  if (expiresIn) {
-    const expiresAt = Date.now() + expiresIn;
-    localStorage.setItem('expiresAt', expiresAt.toString());
+/**
+ * normalizeAuthResponse — converts any backend auth response shape
+ * into the consistent { accessToken, refreshToken, expiresIn, user }
+ * object the rest of the app depends on.
+ *
+ * Handles:
+ *  - Spring Boot that uses "token" instead of "accessToken"
+ *  - expiresIn in seconds (< 100 000) vs milliseconds
+ *  - Missing "user" object — extracted from JWT payload as fallback
+ */
+export function normalizeAuthResponse(data) {
+  // ── Token field name ─────────────────────────────────────
+  const accessToken = data.accessToken || data.token || null;
+
+  // ── Refresh token (optional) ─────────────────────────────
+  const refreshToken = data.refreshToken || null;
+
+  // ── ExpiresIn: convert seconds → ms if needed ────────────
+  // Spring Boot commonly returns seconds (e.g. 3600).
+  // Storing Date.now() + 3600 would expire in 3.6 s, breaking everything.
+  let expiresIn = data.expiresIn || null;
+  if (expiresIn !== null && expiresIn < 100_000) {
+    expiresIn = expiresIn * 1000; // seconds → milliseconds
   }
-  
-  if (user) localStorage.setItem('user', JSON.stringify(user));
+
+  // ── User object ──────────────────────────────────────────
+  // Prefer explicit user object from backend; fall back to JWT payload.
+  let user = data.user || null;
+  if (!user && accessToken) {
+    const payload = decodeJwtPayload(accessToken);
+    if (payload) {
+      user = {
+        id:        payload.id        ?? payload.sub   ?? null,
+        email:     payload.email     ?? payload.sub   ?? null,
+        firstName: payload.firstName ?? payload.given_name  ?? null,
+        lastName:  payload.lastName  ?? payload.family_name ?? null,
+        role:      payload.role      ?? payload.roles?.[0]  ?? null,
+      };
+    }
+  }
+
+  return { accessToken, refreshToken, expiresIn, user };
+}
+
+// ── Token Storage Helpers ────────────────────────────────────
+
+export function getAccessToken()  { return localStorage.getItem('accessToken'); }
+export function getRefreshToken() { return localStorage.getItem('refreshToken'); }
+
+export function getExpiresAt() {
+  const v = localStorage.getItem('expiresAt');
+  return v ? parseInt(v, 10) : null;
+}
+
+export function getUser() {
+  const s = localStorage.getItem('user');
+  try { return s ? JSON.parse(s) : null; } catch { return null; }
+}
+
+export function saveSession(accessToken, refreshToken, expiresIn, user) {
+  if (accessToken)  localStorage.setItem('accessToken',  accessToken);
+  if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
+  if (expiresIn)    localStorage.setItem('expiresAt', String(Date.now() + expiresIn));
+  if (user)         localStorage.setItem('user', JSON.stringify(user));
 }
 
 export function clearSession() {
-  localStorage.removeItem('accessToken');
-  localStorage.removeItem('refreshToken');
-  localStorage.removeItem('expiresAt');
-  localStorage.removeItem('user');
+  ['accessToken', 'refreshToken', 'expiresAt', 'user'].forEach(
+    (k) => localStorage.removeItem(k)
+  );
 }
 
-// ── Token Refresh Orchestrator ──────────────────────────────
+// ── Token Refresh Orchestrator ───────────────────────────────
 let isRefreshing = false;
 let refreshSubscribers = [];
 
-function subscribeTokenRefresh(cb) {
-  refreshSubscribers.push(cb);
-}
-
+function subscribeTokenRefresh(cb) { refreshSubscribers.push(cb); }
 function onRefreshed(token) {
   refreshSubscribers.forEach((cb) => cb(token));
   refreshSubscribers = [];
 }
 
-/**
- * refreshAccessToken — exchange the refresh token for a new access token
- */
 export async function refreshAccessToken() {
   const refreshToken = getRefreshToken();
-  if (!refreshToken) {
-    clearSession();
-    throw new Error('No refresh token available');
-  }
+  if (!refreshToken) { clearSession(); throw new Error('No refresh token available'); }
 
   try {
     const response = await fetch(`${BASE_URL}/auth/refresh`, {
@@ -78,39 +115,30 @@ export async function refreshAccessToken() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refreshToken }),
     });
+    if (!response.ok) throw new Error('Token refresh failed');
 
-    if (!response.ok) {
-      throw new Error('Refresh token request failed');
-    }
-
-    const data = await response.json();
-    // Save new access token, update expiry. Refresh token is reused (not rotated)
-    saveSession(data.accessToken, refreshToken, data.expiresIn, data.user || getUser());
-    return data.accessToken;
-  } catch (error) {
+    const raw  = await response.json();
+    const norm = normalizeAuthResponse(raw);
+    saveSession(norm.accessToken, refreshToken, norm.expiresIn, norm.user || getUser());
+    return norm.accessToken;
+  } catch (err) {
     clearSession();
-    throw error;
+    throw err;
   }
 }
 
-/**
- * checkAndRefreshToken — checks token status and refreshes if needed.
- */
 async function checkAndRefreshToken() {
-  const accessToken = getAccessToken();
+  const accessToken  = getAccessToken();
   const refreshToken = getRefreshToken();
-  const expiresAt = getExpiresAt();
+  const expiresAt    = getExpiresAt();
 
-  if (!accessToken || !refreshToken || !expiresAt) return null;
+  if (!accessToken || !refreshToken || !expiresAt) return accessToken ?? null;
 
-  // Refresh if token is expired or within 30 seconds of expiring
-  if (Date.now() + 30000 > expiresAt) {
+  // Refresh if within 60 s of expiry (generous buffer for slow networks)
+  if (Date.now() + 60_000 > expiresAt) {
     if (isRefreshing) {
-      return new Promise((resolve) => {
-        subscribeTokenRefresh(resolve);
-      });
+      return new Promise((resolve) => subscribeTokenRefresh(resolve));
     }
-
     isRefreshing = true;
     try {
       const newToken = await refreshAccessToken();
@@ -126,87 +154,71 @@ async function checkAndRefreshToken() {
   return accessToken;
 }
 
-// ── Generic Authenticated Fetch Wrapper ─────────────────────
+// ── Generic Authenticated Fetch ──────────────────────────────
+
 export async function request(path, options = {}) {
-  // Determine if this request requires authentication
-  const isAuthRequest = path.startsWith('/auth/login') || path.startsWith('/auth/register') || path.startsWith('/auth/refresh');
-  
-  if (!isAuthRequest) {
+  // Routes that skip the pre-flight token refresh
+  const skipRefresh = path.startsWith('/auth/login')
+    || path.startsWith('/auth/register')
+    || path.startsWith('/auth/refresh')
+    || path.startsWith('/auth/logout');
+
+  // Routes that do NOT receive an Authorization header
+  const skipAuthHeader = path.startsWith('/auth/login')
+    || path.startsWith('/auth/register')
+    || path.startsWith('/auth/refresh');
+
+  if (!skipRefresh) {
     try {
       await checkAndRefreshToken();
-    } catch (e) {
-      // Refresh failed, clear session and notify app
+    } catch {
       clearSession();
       window.dispatchEvent(new CustomEvent('auth-logout'));
       throw new Error('Session expired. Please log in again.');
     }
   }
 
-  const headers = {
-    'Content-Type': 'application/json',
-    ...options.headers,
-  };
+  const headers = { 'Content-Type': 'application/json', ...options.headers };
 
   const token = getAccessToken();
-  if (token && !isAuthRequest) {
+  if (token && !skipAuthHeader) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${BASE_URL}${path}`, {
-    ...options,
-    headers,
-  });
+  const response = await fetch(`${BASE_URL}${path}`, { ...options, headers });
 
   if (response.status === 401) {
-    // If request returned 401, clear local storage and dispatch logout event
     clearSession();
     window.dispatchEvent(new CustomEvent('auth-logout'));
-    throw new Error('Unauthorized. Session expired.');
+    throw new Error('Unauthorized. Please sign in again.');
   }
 
   if (!response.ok) {
     let errorData = {};
-    try {
-      errorData = await response.json();
-    } catch (e) {
-      // response might not be json
-    }
-    const errMsg = errorData.error || errorData.message || `API error: ${response.status}`;
-    const err = new Error(errMsg);
-    err.status = response.status;
+    try { errorData = await response.json(); } catch { /* not JSON */ }
+    const msg = errorData.error || errorData.message || `Server error (${response.status})`;
+    const err = new Error(msg);
+    err.status  = response.status;
     err.details = errorData;
     throw err;
   }
 
-  // Response might be empty (e.g. 204 No Content, or logout string)
-  const contentType = response.headers.get('content-type');
-  if (contentType && contentType.includes('application/json')) {
-    return response.json();
-  }
-  return response.text();
+  const ct = response.headers.get('content-type') ?? '';
+  return ct.includes('application/json') ? response.json() : response.text();
 }
 
-export function get(path, options = {}) {
-  return request(path, { ...options, method: 'GET' });
-}
+export const get  = (path, opts = {}) => request(path, { ...opts, method: 'GET' });
+export const post = (path, body, opts = {}) =>
+  request(path, { ...opts, method: 'POST', body: body ? JSON.stringify(body) : undefined });
 
-export function post(path, body, options = {}) {
-  return request(path, {
-    ...options,
-    method: 'POST',
-    body: body ? JSON.stringify(body) : undefined,
-  });
-}
-
-// ── Domain-specific helpers ──────────────────────────────────
+// ── Domain API helpers ───────────────────────────────────────
 export const authApi = {
-  login: (email, password) => post('/auth/login', { email, password }),
-  register: (firstName, lastName, email, role, password) =>
-    post('/auth/register', { firstName, lastName, email, role, password }),
-  logout: () => post('/auth/logout', null),
-  refresh: (refreshToken) => post('/auth/refresh', { refreshToken }),
+  login:    (email, password)                           => post('/auth/login',    { email, password }),
+  register: (firstName, lastName, email, role, password) => post('/auth/register', { firstName, lastName, email, role, password }),
+  logout:   ()                                          => post('/auth/logout',   null),
+  refresh:  (refreshToken)                              => post('/auth/refresh',  { refreshToken }),
 };
 
-export const routesApi   = { list: () => get('/routes') };
-export const stopsApi    = { list: () => get('/stops')  };
+export const routesApi   = { list: () => get('/routes')    };
+export const stopsApi    = { list: () => get('/stops')     };
 export const scheduleApi = { list: () => get('/schedules') };
