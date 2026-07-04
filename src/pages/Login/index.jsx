@@ -18,7 +18,8 @@ export default function Login() {
   // Form state
   const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
-  const [showPwd,  setShowPwd]  = useState(false);  // Toggle password visibility
+  const [role,     setRole]     = useState('admin');
+  const [showPwd,  setShowPwd]  = useState(false);
   const [loading,  setLoading]  = useState(false);
 
   // Handle form submit — simulates login for now
@@ -106,6 +107,30 @@ export default function Login() {
                   : <EyeIcon      className="w-4 h-4" />
                 }
               </button>
+            </div>
+          </div>
+
+          {/* Role selector */}
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-1.5">
+              Role
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              {['admin', 'driver'].map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setRole(r)}
+                  className={[
+                    'py-2.5 rounded-lg border text-sm font-medium capitalize transition-all',
+                    role === r
+                      ? 'bg-primary/20 border-primary text-primary'
+                      : 'bg-white/5 border-white/10 text-slate-400 hover:border-white/20 hover:text-slate-200',
+                  ].join(' ')}
+                >
+                  {r.charAt(0).toUpperCase() + r.slice(1)}
+                </button>
+              ))}
             </div>
           </div>
 
