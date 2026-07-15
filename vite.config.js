@@ -13,4 +13,13 @@ export default defineConfig({
       },
     },
   },
+  preview: {
+    proxy: {
+      '/api': {
+        target: 'https://transitops-backend-production.up.railway.app',
+        changeOrigin: true,
+        secure: true,
+      },
+    },
+  },
 })

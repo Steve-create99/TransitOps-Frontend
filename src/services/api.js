@@ -6,7 +6,23 @@
 
 // Use a relative path so the Vite proxy handles routing in dev,
 // and VITE_API_URL can be set to the full backend URL in production.
-const BASE_URL = import.meta.env.VITE_API_URL || '/api';
+// The Spring Boot backend serves all routes under /api (e.g. /api/auth/register).
+// Requests to /auth/register without that prefix return 403 Forbidden.
+function resolveBaseUrl() {
+  let base = import.meta.env.VITE_API_URL;
+  if (!base) {
+    base = import.meta.env.PROD
+      ? 'https://transitops-backend-production.up.railway.app/api'
+      : '/api';
+  }
+  base = base.replace(/\/$/, '');
+  if (/^https?:\/\//.test(base) && !base.endsWith('/api')) {
+    base = `${base}/api`;
+  }
+  return base;
+}
+
+const BASE_URL = resolveBaseUrl();
 
 // ── JWT Utilities ────────────────────────────────────────────
 
