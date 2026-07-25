@@ -167,417 +167,143 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen w-full flex bg-[#f9f9ff] overflow-hidden font-sans">
-      
-      {/* ── Left Column: Branding & Atmosphere ────────────────── */}
-      <aside className="hidden lg:flex w-1/2 bg-[#0A1628] flex-col relative items-center justify-center p-12 overflow-hidden shrink-0">
+    <div className="min-h-screen flex items-center justify-center font-sans text-slate-900 bg-[#F1F5F9] antialiased">
+      <main className="w-[900px] h-auto min-h-[560px] bg-white rounded-[1rem] overflow-hidden flex flex-col md:flex-row relative shadow-[0px_10px_25px_rgba(0,0,0,0.05)]">
         
-        {/* Background Image */}
-        <div 
-          className="absolute inset-0 z-0 bg-cover bg-center opacity-30" 
-          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?q=80&w=2069&auto=format&fit=crop')" }} 
-        />
-
-        {/* Background Dot Matrix Pattern */}
-        <div className="absolute inset-0 pointer-events-none z-0" style={dotGridStyle} />
-        {/* Background Diagonal Accent Pattern */}
-        <div className="absolute inset-0 opacity-40 pointer-events-none z-0" style={diagonalGridStyle} />
-
-        {/* Dynamic Center Branding Content */}
-        <div className="relative z-10 flex flex-col items-center text-center max-w-md">
-          
-          {/* Brand Mark */}
-          <div className="mb-6 flex flex-col items-center">
-            <div className="w-[64px] h-[64px] bg-white flex items-center justify-center rounded-full mb-4 shadow-lg p-2">
-              <img 
-                src="https://cdn-icons-png.flaticon.com/512/3448/3448339.png" 
-                alt="TransitOps Logo" 
-                className="w-full h-full object-contain"
-              />
+        {/* Left Side: Form */}
+        <section className="w-full md:w-1/2 flex flex-col items-center justify-center p-10 relative z-10 bg-white order-2 md:order-1 transition-all">
+          {/* Logo Lockup */}
+          <div className="flex items-center gap-2 mb-8">
+            <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+              <span className="material-symbols-outlined text-white" style={{ fontVariationSettings: "'FILL' 1" }}>directions_bus</span>
             </div>
-            <h1 className="text-3xl font-bold tracking-tight text-white font-mono">TransitOps</h1>
-            <p className="text-slate-400 text-xs mt-1 tracking-wider uppercase">Accra Metro Transit Authority</p>
-            <div className="w-16 h-0.5 bg-primary mt-4" />
+            <span className="text-[24px] font-bold text-slate-900 tracking-tight">TransitOps</span>
           </div>
 
-          {/* View-specific highlights panel */}
-          {viewMode === 'signin' ? (
-            <div className="w-full mt-6 space-y-6">
-              <p className="text-sm text-slate-400 max-w-sm mx-auto leading-relaxed">
-                Unified Operations Management Portal for scheduling, routing, and live tracking.
-              </p>
-              
-              <ul className="space-y-4 text-left mt-8 w-full max-w-xs mx-auto">
-                <li className="flex items-center gap-3.5">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
-                    <MapIcon className="w-4.5 h-4.5 text-primary" />
-                  </div>
-                  <span className="text-sm text-slate-300">Manage routes and stops in real time</span>
-                </li>
-                <li className="flex items-center gap-3.5">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
-                    <ChartBarIcon className="w-4.5 h-4.5 text-primary" />
-                  </div>
-                  <span className="text-sm text-slate-300">Monitor network performance at a glance</span>
-                </li>
-                <li className="flex items-center gap-3.5">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
-                    <ClockIcon className="w-4.5 h-4.5 text-primary" />
-                  </div>
-                  <span className="text-sm text-slate-300">Schedule and track all bus runs</span>
-                </li>
-              </ul>
-            </div>
-          ) : (
-            <div className="w-full mt-6 flex flex-col items-center">
-              <h2 className="text-sm font-medium text-slate-300 opacity-90 max-w-sm mb-8 leading-relaxed">
-                Unified Operations Management for the Accra Metro Transit Authority.
-              </h2>
-              
-              {/* Control center graphics panel */}
-              <div className="relative w-full max-w-sm aspect-square rounded-2xl overflow-hidden shadow-2xl border border-white/10">
-                <img
-                  className="w-full h-full object-cover"
-                  alt="Accra modern transit command center monitoring desks"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuBm_4V9XrVsUwGl2fg7GujMe57RtmqP8pyh5qkoJf9ntMsROfcPhjiK8PCMfBIWUotKr1-327mK1w_r9fJd7oITLOk9SVwG1DGQ4CihOdBNk7SDbcOqjCQ1Qcue0iPNsA6r63oWb2zsX-1v5xK4CEZgRYAxNx3rDoaHPjDPh3G2ust_4urowNqKbsUc-AyiqMDPpgYVXp3CuEc2bmM8KLrfxBwEF0l7VBejdtK0Pd9T1yGeF3UX4Duz2YNTK6qsO_WgPIUMKFwiY2k"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0A1628] via-[#0A1628]/30 to-transparent" />
-                <div className="absolute bottom-5 left-5 right-5 text-left">
-                  <p className="text-[9px] text-primary font-bold uppercase tracking-widest mb-1">Infrastructure Hub</p>
-                  <p className="text-white text-xs italic leading-relaxed opacity-90">
-                    "Ensuring every journey across the city is seamless, safe, and on schedule."
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Fixed Footer */}
-          <div className="mt-12 text-center">
-            <p className="text-[11px] text-slate-500">
-              © 2026 TransitOps · Accra Metro Transit Authority
-            </p>
+          {/* Heading Section */}
+          <div className="text-center w-full">
+            <h1 className="text-[26px] font-bold text-slate-900 mb-2">
+              {viewMode === 'signin' ? 'Sign In' : 'Sign Up'}
+            </h1>
+            <div className="w-10 h-[1px] bg-slate-300 mx-auto mb-6"></div>
           </div>
 
-        </div>
-
-      </aside>
-
-      {/* ── Right Column: Sign In / Sign Up Forms ────────────── */}
-      <main className="flex-1 bg-white flex flex-col items-center justify-center px-6 py-12 overflow-y-auto scrollbar-thin">
-        <div className="w-full max-w-[420px] flex flex-col">
-          
-          {/* Dynamic Headers */}
-          <header className="mb-8">
-            <span className="text-[10px] font-bold text-primary tracking-[0.2em] block mb-3 uppercase">
-              STAFF PORTAL
-            </span>
-            <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
-              {viewMode === 'signin' ? 'Welcome back' : 'Create your account'}
-            </h2>
-            <p className="text-sm text-slate-500 mt-1.5">
-              {viewMode === 'signin'
-                ? 'Sign in to your TransitOps account'
-                : 'Join the TransitOps staff platform'}
-            </p>
-          </header>
-
-          {/* ── Feedback Banners ──────────────────────────────── */}
+          {/* Feedback */}
           {error && (
-            <div className="flex items-start gap-2.5 mb-5 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
-              <ExclamationCircleIcon className="w-5 h-5 shrink-0 mt-0.5" />
+            <div className="w-full max-w-[320px] mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-lg flex items-start gap-2">
+              <ExclamationCircleIcon className="w-5 h-5 shrink-0" />
               <span>{error}</span>
             </div>
           )}
           {success && (
-            <div className="flex items-start gap-2.5 mb-5 px-4 py-3 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm">
-              <CheckCircleIcon className="w-5 h-5 shrink-0 mt-0.5" />
+            <div className="w-full max-w-[320px] mb-4 p-3 bg-green-50 text-green-700 text-sm rounded-lg flex items-start gap-2">
+              <CheckCircleIcon className="w-5 h-5 shrink-0" />
               <span>{success}</span>
             </div>
           )}
 
-          {/* Form renders dynamically based on viewMode */}
+          {/* Form */}
           {viewMode === 'signin' ? (
-
-            /* ──────────────── Sign In View ──────────────── */
-            <form onSubmit={handleSignIn} className="space-y-5">
-              
-              {/* Email Input */}
-              <div className="flex flex-col">
-                <label className="text-xs font-semibold text-slate-700 mb-2" htmlFor="email">
-                  Email address
-                </label>
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                    <EnvelopeIcon className="h-5 w-5 text-slate-400 group-focus-within:text-primary transition-colors" />
-                  </div>
-                  <input
-                    id="email"
-                    type="email"
-                    required
-                    placeholder="you@transitops.gh"
-                    value={email}
-                    onChange={(e) => { setEmail(e.target.value); resetFeedback(); }}
-                    className="w-full h-12 pl-11 pr-4 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-primary transition-all"
-                  />
-                </div>
+            <form onSubmit={handleSignIn} className="w-full max-w-[320px] flex flex-col gap-4">
+              <div className="relative">
+                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">mail</span>
+                <input 
+                  type="email" required placeholder="Email Address" 
+                  value={email} onChange={(e) => { setEmail(e.target.value); resetFeedback(); }}
+                  className="w-full h-[46px] pl-12 pr-4 bg-white border border-slate-200 rounded-full text-[14px] placeholder-slate-400 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" 
+                />
               </div>
-
-              {/* Password Input */}
-              <div className="flex flex-col">
-                <label className="text-xs font-semibold text-slate-700 mb-2" htmlFor="password">
-                  Password
-                </label>
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                    <LockClosedIcon className="h-5 w-5 text-slate-400 group-focus-within:text-primary transition-colors" />
-                  </div>
-                  <input
-                    id="password"
-                    type={showPwd ? 'text' : 'password'}
-                    required
-                    placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) => { setPassword(e.target.value); resetFeedback(); }}
-                    className="w-full h-12 pl-11 pr-12 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-primary transition-all"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPwd((prev) => !prev)}
-                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-primary transition-colors"
-                  >
-                    {showPwd ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
-                  </button>
-                </div>
+              <div className="relative">
+                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">lock</span>
+                <input 
+                  type={showPwd ? 'text' : 'password'} required placeholder="Password" 
+                  value={password} onChange={(e) => { setPassword(e.target.value); resetFeedback(); }}
+                  className="w-full h-[46px] pl-12 pr-12 bg-white border border-slate-200 rounded-full text-[14px] placeholder-slate-400 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" 
+                />
+                <button type="button" onClick={() => setShowPwd(!showPwd)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary">
+                  <span className="material-symbols-outlined">{showPwd ? 'visibility_off' : 'visibility'}</span>
+                </button>
               </div>
-
-              {/* Remember Me & Forgot Password */}
-              <div className="flex items-center justify-between text-xs">
-                <label className="flex items-center gap-2 cursor-pointer group">
-                  <input
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="h-4.5 w-4.5 rounded border-slate-200 text-primary focus:ring-primary/20 transition-all cursor-pointer"
-                  />
-                  <span className="text-slate-500 group-hover:text-slate-800 transition-colors">
-                    Remember me
-                  </span>
-                </label>
-                <a href="#" className="font-semibold text-primary hover:underline transition-all">
-                  Forgot password?
-                </a>
+              <div className="text-center mt-2">
+                <a href="#" className="text-primary text-[13px] font-medium hover:underline">Forgot Your Password?</a>
               </div>
-
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full h-[50px] bg-primary hover:bg-[#0F6E56] active:scale-[0.98] text-white font-bold text-sm rounded-lg transition-all flex items-center justify-center gap-2 shadow-none disabled:opacity-60"
-              >
-                {loading ? 'Signing In...' : 'Sign In'}
+              <button type="submit" disabled={loading} className="mt-4 h-[46px] bg-primary hover:bg-[#188663] text-white font-bold text-[14px] rounded-full uppercase tracking-wider active:scale-95 transition-all shadow-md disabled:opacity-70 flex justify-center items-center">
+                {loading ? 'SIGNING IN...' : 'SIGN IN'}
               </button>
-
             </form>
-
           ) : (
-
-            /* ──────────────── Sign Up View ──────────────── */
-            <form onSubmit={handleSignUp} className="space-y-4">
-              
-              {/* Full Name Row */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold text-slate-700">First name</label>
-                  <div className="relative">
-                    <UserIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 h-5 w-5" />
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Kofi"
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      className="w-full h-12 pl-11 pr-4 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-primary transition-all"
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold text-slate-700">Last name</label>
-                  <div className="relative">
-                    <UserIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 h-5 w-5" />
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Mensah"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      className="w-full h-12 pl-11 pr-4 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-primary transition-all"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Work Email */}
-              <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-slate-700">Work email</label>
-                <div className="relative">
-                  <EnvelopeIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 h-5 w-5" />
-                  <input
-                    type="email"
-                    required
-                    placeholder="you@transitops.gh"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full h-12 pl-11 pr-4 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-primary transition-all"
-                  />
-                </div>
-              </div>
-
-              {/* Role Select — Admin or Driver only */}
-              <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-slate-700">Role</label>
-                <div className="relative">
-                  <BriefcaseIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 h-5 w-5" />
-                  <select
-                    required
-                    value={role}
-                    onChange={(e) => setRole(e.target.value)}
-                    className="w-full h-12 pl-11 pr-10 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-primary bg-white transition-all cursor-pointer appearance-none"
-                  >
-                    <option value="" disabled>Select your role</option>
-                    {ROLES.map(({ label, value }) => (
-                      <option key={value} value={value}>{label}</option>
-                    ))}
+            <form onSubmit={handleSignUp} className="w-full max-w-[320px] flex flex-col gap-4">
+               <div className="flex gap-2">
+                  <input type="text" placeholder="First Name" required value={firstName} onChange={e => setFirstName(e.target.value)} className="w-1/2 h-[46px] px-4 border border-slate-200 rounded-full text-[14px] focus:ring-2 focus:ring-primary focus:border-transparent outline-none" />
+                  <input type="text" placeholder="Last Name" required value={lastName} onChange={e => setLastName(e.target.value)} className="w-1/2 h-[46px] px-4 border border-slate-200 rounded-full text-[14px] focus:ring-2 focus:ring-primary focus:border-transparent outline-none" />
+               </div>
+               <div className="relative">
+                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">mail</span>
+                  <input type="email" placeholder="Email Address" required value={email} onChange={e => setEmail(e.target.value)} className="w-full h-[46px] pl-12 pr-4 border border-slate-200 rounded-full text-[14px] focus:ring-2 focus:ring-primary focus:border-transparent outline-none" />
+               </div>
+               <div className="relative">
+                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">badge</span>
+                  <select required value={role} onChange={e => setRole(e.target.value)} className="w-full h-[46px] pl-12 pr-10 border border-slate-200 rounded-full text-[14px] focus:ring-2 focus:ring-primary focus:border-transparent outline-none appearance-none bg-white">
+                    <option value="" disabled>Select Role</option>
+                    <option value="ADMIN">Admin</option>
+                    <option value="DRIVER">Driver</option>
                   </select>
-                  <ChevronDownIcon className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 h-4 w-4 pointer-events-none" />
-                </div>
-              </div>
-
-              {/* Password Row */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                
-                {/* Password field */}
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold text-slate-700">Password</label>
-                  <div className="relative">
-                    <LockClosedIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 h-5 w-5" />
-                    <input
-                      type={showPwd ? 'text' : 'password'}
-                      required
-                      minLength={8}
-                      placeholder="Min. 8 characters"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full h-12 pl-11 pr-10 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-primary transition-all"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPwd((prev) => !prev)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors"
-                    >
-                      {showPwd ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Confirm password field */}
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold text-slate-700">Confirm password</label>
-                  <div className="relative">
-                    <LockClosedIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 h-5 w-5" />
-                    <input
-                      type={showConfirmPwd ? 'text' : 'password'}
-                      required
-                      placeholder="Re-enter password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full h-12 pl-11 pr-10 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-primary transition-all"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmPwd((prev) => !prev)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors"
-                    >
-                      {showConfirmPwd ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
-                    </button>
-                  </div>
-                </div>
-
-              </div>
-
-              {/* Password Strength Indicator */}
-              <div className="space-y-1.5 pt-1">
-                <div className="flex gap-2">
-                  {[1, 2, 3, 4].map((index) => (
-                    <div
-                      key={index}
-                      className="h-1 rounded-full flex-1 transition-all duration-300"
-                      style={{ backgroundColor: index <= strength.score ? strength.color : '#bccac1' }}
-                    />
-                  ))}
-                </div>
-                <p className="text-[11px] text-slate-500">
-                  Password strength:{' '}
-                  <span className="font-semibold" style={{ color: strength.color }}>
-                    {strength.label}
-                  </span>
-                </p>
-              </div>
-
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full h-[50px] bg-primary hover:bg-[#0F6E56] active:scale-[0.98] text-white font-bold text-sm rounded-lg transition-all duration-200 shadow-none disabled:opacity-60 mt-2"
-              >
-                {loading ? 'Creating Account...' : 'Create Account'}
-              </button>
-
+               </div>
+               <div className="relative">
+                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">lock</span>
+                  <input type={showPwd ? 'text' : 'password'} placeholder="Password" required value={password} onChange={e => setPassword(e.target.value)} className="w-full h-[46px] pl-12 pr-12 border border-slate-200 rounded-full text-[14px] focus:ring-2 focus:ring-primary focus:border-transparent outline-none" />
+                  <button type="button" onClick={() => setShowPwd(!showPwd)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary">
+                    <span className="material-symbols-outlined">{showPwd ? 'visibility_off' : 'visibility'}</span>
+                  </button>
+               </div>
+               <div className="relative">
+                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">lock</span>
+                  <input type={showConfirmPwd ? 'text' : 'password'} placeholder="Confirm Password" required value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className="w-full h-[46px] pl-12 pr-12 border border-slate-200 rounded-full text-[14px] focus:ring-2 focus:ring-primary focus:border-transparent outline-none" />
+                  <button type="button" onClick={() => setShowConfirmPwd(!showConfirmPwd)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary">
+                    <span className="material-symbols-outlined">{showConfirmPwd ? 'visibility_off' : 'visibility'}</span>
+                  </button>
+               </div>
+               <button type="submit" disabled={loading} className="mt-2 h-[46px] bg-primary hover:bg-[#188663] text-white font-bold text-[14px] rounded-full uppercase tracking-wider active:scale-95 transition-all shadow-md disabled:opacity-70 flex justify-center items-center">
+                 {loading ? 'CREATING...' : 'SIGN UP'}
+               </button>
             </form>
           )}
 
-          {/* Toggle View Mode Footer */}
-          <footer className="mt-8 text-center text-sm">
-            <p className="text-slate-500">
-              {viewMode === 'signin' ? (
-                <>
-                  Don&apos;t have an account?{' '}
-                  <button
-                    type="button"
-                    onClick={() => switchView('signup')}
-                    className="text-primary font-bold hover:underline ml-1 cursor-pointer"
-                  >
-                    Sign Up
-                  </button>
-                </>
-              ) : (
-                <>
-                  Already have an account?{' '}
-                  <button
-                    type="button"
-                    onClick={() => switchView('signin')}
-                    className="text-primary font-bold hover:underline ml-1 cursor-pointer"
-                  >
-                    Sign In
-                  </button>
-                </>
-              )}
+        </section>
+        
+        {/* Right Side: Welcome Panel */}
+        <section className={`w-full md:w-1/2 bg-secondary relative overflow-hidden flex flex-col items-center justify-center text-center px-12 py-12 order-1 md:order-2`}>
+          {/* Organic Curve Element */}
+          <div className={`hidden md:block absolute inset-y-0 ${viewMode === 'signin' ? '-left-[100px] rounded-l-[300px]' : '-right-[100px] rounded-r-[300px]'} w-[200px] bg-secondary z-0`} />
+          
+          <div className="relative z-20 flex flex-col items-center gap-6">
+            <h2 className="text-white text-[30px] font-bold">
+              {viewMode === 'signin' ? 'Hello, Friend!' : 'Welcome Back!'}
+            </h2>
+            <p className="text-slate-300 text-[14px] leading-relaxed max-w-[260px]">
+              {viewMode === 'signin' 
+                ? 'Register with your personal details to access all TransitOps features'
+                : 'To keep connected with us please login with your personal info'}
             </p>
-          </footer>
+            <button 
+              type="button"
+              onClick={() => switchView(viewMode === 'signin' ? 'signup' : 'signin')}
+              className="mt-4 px-12 h-[46px] border border-white text-white font-bold text-[13px] rounded-full uppercase tracking-wider hover:bg-white/10 active:scale-95 transition-all"
+            >
+              {viewMode === 'signin' ? 'SIGN UP' : 'SIGN IN'}
+            </button>
+          </div>
 
-          {/* Legal Footer Links (sign up only) */}
-          {viewMode === 'signup' && (
-            <div className="mt-8 pt-6 border-t border-slate-100 flex justify-center gap-4 text-xs text-slate-400">
-              <a href="#" className="hover:text-primary transition-colors">Privacy Policy</a>
-              <a href="#" className="hover:text-primary transition-colors">Terms of Service</a>
-              <a href="#" className="hover:text-primary transition-colors">Support</a>
-            </div>
-          )}
-
-        </div>
+          {/* Background Atmosphere */}
+          <div className="absolute bottom-[-10%] right-[-10%] w-64 h-64 bg-primary/20 blur-[100px] rounded-full"></div>
+          <div className="absolute top-[-10%] left-[20%] w-48 h-48 bg-primary/20 blur-[80px] rounded-full"></div>
+        </section>
       </main>
-
+      
+      {/* Footer Identity */}
+      <footer className="fixed bottom-8 text-slate-400 text-[12px] font-medium">
+        © 2026 Accra Metro Transit Authority. All rights reserved.
+      </footer>
     </div>
   );
 }
