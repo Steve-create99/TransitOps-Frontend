@@ -11,7 +11,6 @@ import { useAppContext } from '../context/AppContext';
 import AppLayout from '../layouts/AppLayout';
 
 // ── Pages ───────────────────────────────────────────────────
-import Splash        from '../pages/Splash';
 import Login         from '../pages/Login';
 import Dashboard     from '../pages/Dashboard';
 import RoutesPage    from '../pages/Routes';
@@ -47,7 +46,7 @@ export default function AppRouter() {
   return (
     <Routes>
       {/* ── Guest-only Pages (redirect to dashboard if logged in) ── */}
-      <Route path="/"      element={<GuestRoute element={<Splash />} />} />
+      <Route path="/"      element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<GuestRoute element={<Login  />} />} />
 
       {/* ── Protected App Pages (redirect to /login if not logged in) ── */}
