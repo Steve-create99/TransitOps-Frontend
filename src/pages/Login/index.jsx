@@ -172,18 +172,28 @@ export default function Login() {
       {/* ── Left Column: Branding & Atmosphere ────────────────── */}
       <aside className="hidden lg:flex w-1/2 bg-[#0A1628] flex-col relative items-center justify-center p-12 overflow-hidden shrink-0">
         
+        {/* Background Image */}
+        <div 
+          className="absolute inset-0 z-0 bg-cover bg-center opacity-30" 
+          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?q=80&w=2069&auto=format&fit=crop')" }} 
+        />
+
         {/* Background Dot Matrix Pattern */}
-        <div className="absolute inset-0 pointer-events-none" style={dotGridStyle} />
+        <div className="absolute inset-0 pointer-events-none z-0" style={dotGridStyle} />
         {/* Background Diagonal Accent Pattern */}
-        <div className="absolute inset-0 opacity-40 pointer-events-none" style={diagonalGridStyle} />
+        <div className="absolute inset-0 opacity-40 pointer-events-none z-0" style={diagonalGridStyle} />
 
         {/* Dynamic Center Branding Content */}
         <div className="relative z-10 flex flex-col items-center text-center max-w-md">
           
           {/* Brand Mark */}
           <div className="mb-6 flex flex-col items-center">
-            <div className="w-[52px] h-[52px] bg-primary flex items-center justify-center rounded-full mb-4 shadow-lg shadow-primary/20">
-              <TruckIcon className="w-7 h-7 text-white" />
+            <div className="w-[64px] h-[64px] bg-white flex items-center justify-center rounded-full mb-4 shadow-lg p-2">
+              <img 
+                src="https://cdn-icons-png.flaticon.com/512/3448/3448339.png" 
+                alt="TransitOps Logo" 
+                className="w-full h-full object-contain"
+              />
             </div>
             <h1 className="text-3xl font-bold tracking-tight text-white font-mono">TransitOps</h1>
             <p className="text-slate-400 text-xs mt-1 tracking-wider uppercase">Accra Metro Transit Authority</p>

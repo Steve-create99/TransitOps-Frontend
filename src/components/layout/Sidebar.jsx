@@ -70,8 +70,13 @@ export default function Sidebar() {
     >
       {/* ── Brand Logo ──────────────────────────────────── */}
       <div className="flex items-center gap-3 px-6 py-5 border-b border-surface-border">
-        <div className="w-9 h-9 rounded-lg bg-primary/20 flex items-center justify-center shrink-0">
-          <TruckIcon className="w-5 h-5 text-primary" />
+        {/* Bus icon as brand mark */}
+        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shrink-0 p-1">
+          <img 
+            src="https://cdn-icons-png.flaticon.com/512/3448/3448339.png" 
+            alt="TransitOps Logo" 
+            className="w-full h-full object-contain"
+          />
         </div>
         <div>
           <p className="text-white font-bold text-base leading-tight tracking-tight">

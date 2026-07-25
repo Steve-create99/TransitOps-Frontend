@@ -36,10 +36,13 @@ export default function Splash() {
       {/* ── Brand Mark ────────────────────────────────────── */}
       <div className="relative z-10 flex flex-col items-center gap-6">
         <div
-          className="w-20 h-20 rounded-2xl bg-primary/20 border border-primary/30
-                     flex items-center justify-center shadow-lg shadow-primary/10"
+          className="w-24 h-24 rounded-full bg-white flex items-center justify-center shadow-lg p-3"
         >
-          <TruckIcon className="w-10 h-10 text-primary" />
+          <img 
+            src="https://cdn-icons-png.flaticon.com/512/3448/3448339.png" 
+            alt="TransitOps Logo" 
+            className="w-full h-full object-contain"
+          />
         </div>
 
         {/* ── App Name ──────────────────────────────────── */}
