@@ -6,18 +6,21 @@
 
 import { BrowserRouter } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
+import { TransitProvider } from './context/TransitContext';
 import AppRouter from './routes/AppRouter';
 
 /**
- * App — wraps the entire application in AppProvider and BrowserRouter
- * and delegates all route rendering to AppRouter.
+ * App — wraps the entire application in AppProvider, TransitProvider,
+ * and BrowserRouter and delegates all route rendering to AppRouter.
  */
 export default function App() {
   return (
     <AppProvider>
-      <BrowserRouter>
-        <AppRouter />
-      </BrowserRouter>
+      <TransitProvider>
+        <BrowserRouter>
+          <AppRouter />
+        </BrowserRouter>
+      </TransitProvider>
     </AppProvider>
   );
 }
