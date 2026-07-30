@@ -12,6 +12,7 @@ import {
   UserCircleIcon,
 } from '@heroicons/react/24/outline';
 import { useAppContext } from '../../context/AppContext';
+import { useTransit } from '../../context/TransitContext';
 
 // ── Page title map — maps route paths to display titles ─────
 const PAGE_TITLES = {
@@ -30,11 +31,12 @@ const PAGE_TITLES = {
 
 /**
  * TopNav — fixed horizontal bar at the top of every app page.
- * Shows the current page title and the logged-in user's full name.
+ * Shows the current page title, unread notifications badge, and profile.
  */
 export default function TopNav() {
   const { pathname } = useLocation();
   const { user }     = useAppContext();
+  const { activeAlertsCount } = useTransit();
   const [searchValue, setSearchValue] = useState('');
 
   const pageTitle   = PAGE_TITLES[pathname] ?? 'TransitOps';
@@ -77,7 +79,7 @@ export default function TopNav() {
 
       {/* ── Right Controls ──────────────────────────────── */}
       <div className="flex items-center gap-3">
-        {/* Notification bell */}
+        {/* Notification bell with live badge count */}
         <button
           id="topnav-notifications"
           type="button"
@@ -86,7 +88,15 @@ export default function TopNav() {
                      hover:text-slate-100 transition-colors duration-200"
         >
           <BellIcon className="w-5 h-5" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-status-critical" />
+          {activeAlertsCount > 0 ? (
+            <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 rounded-full bg-status-critical text-[10px] text-white flex items-center justify-center font-bold px-1">
+              {activeAlertsCount}
+            </span>
+          ) : (
+            <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-primary text-[10px] text-white flex items-center justify-center font-bold">
+              ✓
+            </span>
+          )}
         </button>
 
         {/* User avatar with real name */}

@@ -1,145 +1,178 @@
 // ============================================================
-// Notifications/index.jsx — System alerts and notifications
+// Notifications/index.jsx — System Alerts and Feed
 // Author  : TransitOps Dev Team
 // Date    : 2026
 // ============================================================
 
+import { useState, useEffect } from 'react';
 import {
   BellIcon,
   ExclamationTriangleIcon,
   InformationCircleIcon,
   CheckCircleIcon,
 } from '@heroicons/react/24/outline';
+import clsx from 'clsx';
+import { useTransit } from '../../context/TransitContext';
 
-// ── Mock notification data ───────────────────────────────────
-const mockNotifications = [
-  {
-    id: 'notif-001',
-    type:    'critical',
-    icon:    ExclamationTriangleIcon,
-    title:   'Route RT-22 — Service Disruption',
-    message: 'Bus BUS-031 has broken down at University Gate. Replacement dispatched.',
-    time:    '2 min ago',
-    read:    false,
-    badge:   'badge-critical',
-    iconColor: 'text-status-critical',
-    iconBg:    'bg-status-critical/10',
-  },
-  {
-    id: 'notif-002',
-    type:    'warning',
-    icon:    ExclamationTriangleIcon,
-    title:   'Route RT-07 — Delay Alert',
-    message: 'North City Loop running 12 minutes behind schedule due to traffic.',
-    time:    '8 min ago',
-    read:    false,
-    badge:   'badge-delayed',
-    iconColor: 'text-status-delayed',
-    iconBg:    'bg-status-delayed/10',
-  },
-  {
-    id: 'notif-003',
-    type:    'info',
-    icon:    InformationCircleIcon,
-    title:   'Schedule Update — Weekend Service',
-    message: 'Weekend reduced-service schedule is now active for routes RT-30 and RT-38.',
-    time:    '1 hr ago',
-    read:    true,
-    badge:   null,
-    iconColor: 'text-slate-400',
-    iconBg:    'bg-surface-light',
-  },
-  {
-    id: 'notif-004',
-    type:    'success',
-    icon:    CheckCircleIcon,
-    title:   'Maintenance Complete — BUS-102',
-    message: 'Bus BUS-102 has completed scheduled maintenance and is back in service.',
-    time:    '3 hr ago',
-    read:    true,
-    badge:   null,
-    iconColor: 'text-status-active',
-    iconBg:    'bg-status-active/10',
-  },
-  {
-    id: 'notif-005',
-    type:    'info',
-    icon:    InformationCircleIcon,
-    title:   'New Route Added — RT-45',
-    message: 'Route RT-45 (Suburb Express) has been added and will begin service Monday.',
-    time:    'Yesterday',
-    read:    true,
-    badge:   null,
-    iconColor: 'text-slate-400',
-    iconBg:    'bg-surface-light',
-  },
-];
-
-/**
- * Notifications — list of system alerts, sorted newest first.
- * Unread notifications are highlighted with a left border accent.
- */
 export default function Notifications() {
-  // Count unread notifications
-  const unreadCount = mockNotifications.filter((n) => !n.read).length;
+  const {
+    notifications,
+    markNotificationRead,
+    activeAlertsCount,
+  } = useTransit();
+
+  // Local state for smooth 300ms read animations
+  const [readingIds, setReadingIds] = useState([]);
+  const [lastCheckedTime, setLastCheckedTime] = useState(null);
+
+  // Set the "Last checked" timestamp when all notifications are read
+  useEffect(() => {
+    if (activeAlertsCount === 0 && !lastCheckedTime) {
+      const nowStr = new Date().toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      setLastCheckedTime(nowStr);
+    } else if (activeAlertsCount > 0) {
+      setLastCheckedTime(null);
+    }
+  }, [activeAlertsCount, lastCheckedTime]);
+
+  const handleMarkAsRead = (id) => {
+    setReadingIds((prev) => [...prev, id]);
+    setTimeout(() => {
+      markNotificationRead(id);
+      setReadingIds((prev) => prev.filter((rid) => rid !== id));
+    }, 300); // 300ms fade transition
+  };
+
+  const handleMarkAllRead = () => {
+    const unread = notifications.filter((n) => !n.read);
+    if (unread.length === 0) return;
+
+    // Staggered trigger animation
+    unread.forEach((n, index) => {
+      setTimeout(() => {
+        setReadingIds((prev) => [...prev, n.id]);
+        
+        setTimeout(() => {
+          markNotificationRead(n.id);
+          setReadingIds((prev) => prev.filter((rid) => rid !== n.id));
+        }, 300);
+      }, index * 50); // 50ms stagger delay
+    });
+  };
+
+  // Determine if all notifications are fully read
+  const allRead = notifications.every((n) => n.read) && readingIds.length === 0;
 
   return (
     <div className="space-y-6">
-
+      
       {/* ── Page Header ───────────────────────────────────── */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h2 className="section-title flex items-center gap-2">
             <BellIcon className="w-5 h-5 text-primary" />
             Notifications
           </h2>
           <p className="section-subtitle">
-            {unreadCount > 0 ? `${unreadCount} unread alert${unreadCount > 1 ? 's' : ''}` : 'All caught up'}
+            {!allRead ? `${activeAlertsCount} unread system alert${activeAlertsCount !== 1 ? 's' : ''}` : 'All caught up'}
           </p>
         </div>
-        <button type="button" className="btn-ghost" id="notifications-mark-all-read">
-          Mark all as read
-        </button>
+        
+        {!allRead && (
+          <button
+            type="button"
+            id="notifications-mark-all"
+            className="btn-ghost text-xs font-bold cursor-pointer"
+            onClick={handleMarkAllRead}
+          >
+            Mark All as Read
+          </button>
+        )}
       </div>
 
-      {/* ── Notification List ─────────────────────────────── */}
-      <div className="space-y-3">
-        {mockNotifications.map((notif) => {
-          const Icon = notif.icon;
-          return (
-            <div
-              key={notif.id}
-              id={notif.id}
-              className={`
-                card flex items-start gap-4 transition-all duration-200
-                ${!notif.read ? 'border-l-2 border-l-primary' : ''}
-              `}
-            >
-              {/* Icon */}
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${notif.iconBg}`}>
-                <Icon className={`w-5 h-5 ${notif.iconColor}`} />
-              </div>
+      {/* ── Notification List or Empty State ───────────────── */}
+      {!allRead ? (
+        <div className="space-y-3">
+          {notifications.map((notif) => {
+            const isUnread = !notif.read;
+            const isAnimating = readingIds.includes(notif.id);
+            const showAsUnread = isUnread && !isAnimating;
 
-              {/* Content */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2 flex-wrap">
-                  <p className={`text-sm font-semibold ${!notif.read ? 'text-slate-100' : 'text-slate-300'}`}>
-                    {notif.title}
-                  </p>
-                  {notif.badge && <span className={notif.badge}>{notif.type}</span>}
+            return (
+              <div
+                key={notif.id}
+                id={`notif-card-${notif.id}`}
+                className={clsx(
+                  "card flex items-start justify-between gap-4 p-4 transition-all duration-300 transform",
+                  showAsUnread
+                    ? "border-l-4 border-primary bg-[#F0FAF6] text-slate-800 shadow-lg translate-x-1"
+                    : "border-surface-border bg-surface text-slate-300 opacity-90 translate-x-0"
+                )}
+              >
+                <div className="flex items-start gap-4 flex-1">
+                  
+                  {/* Category Icons */}
+                  <div
+                    className={clsx(
+                      "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border",
+                      notif.type === 'ALERT' && (showAsUnread ? 'bg-red-50 text-red-500 border-red-200' : 'bg-status-critical/10 text-status-critical border-status-critical/20'),
+                      notif.type === 'SUCCESS' && (showAsUnread ? 'bg-green-50 text-green-600 border-green-200' : 'bg-status-active/10 text-primary border-primary/20'),
+                      notif.type === 'INFO' && (showAsUnread ? 'bg-blue-50 text-blue-500 border-blue-200' : 'bg-surface-light text-slate-400 border-surface-border')
+                    )}
+                  >
+                    {notif.type === 'ALERT' && <ExclamationTriangleIcon className="w-5 h-5" />}
+                    {notif.type === 'SUCCESS' && <CheckCircleIcon className="w-5 h-5" />}
+                    {notif.type === 'INFO' && <InformationCircleIcon className="w-5 h-5" />}
+                  </div>
+
+                  {/* Body Content */}
+                  <div className="min-w-0 flex-1">
+                    <p className={clsx("text-sm font-bold", showAsUnread ? "text-slate-900" : "text-slate-100")}>
+                      {notif.title}
+                    </p>
+                    <p className={clsx("text-xs mt-1 leading-relaxed", showAsUnread ? "text-slate-600" : "text-slate-400")}>
+                      {notif.message}
+                    </p>
+                    <p className="text-[10px] text-slate-500 font-semibold mt-2">{notif.time}</p>
+                  </div>
                 </div>
-                <p className="text-slate-400 text-sm mt-1">{notif.message}</p>
-                <p className="text-slate-600 text-xs mt-2">{notif.time}</p>
-              </div>
 
-              {/* Unread dot */}
-              {!notif.read && (
-                <div className="w-2 h-2 rounded-full bg-primary shrink-0 mt-1" aria-label="Unread" />
-              )}
-            </div>
-          );
-        })}
-      </div>
+                {/* Mark as read link */}
+                <div className="shrink-0 flex items-center justify-center pt-1">
+                  {notif.read ? (
+                    <span className="text-[11px] text-slate-500 font-bold flex items-center gap-1">
+                      ✓ Read
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      className={clsx(
+                        "text-[11px] font-bold hover:underline cursor-pointer transition-colors",
+                        showAsUnread ? "text-primary hover:text-primary/80" : "text-slate-400 hover:text-slate-200"
+                      )}
+                      onClick={() => handleMarkAsRead(notif.id)}
+                    >
+                      {isAnimating ? 'Fading...' : 'Mark as read'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        /* Dynamic Catch Up Empty State */
+        <div className="card flex flex-col items-center justify-center text-center p-12 border border-primary/20 bg-slate-900">
+          <div className="w-16 h-16 rounded-full bg-status-active/15 border border-primary/30 flex items-center justify-center mb-4">
+            <CheckCircleIcon className="w-9 h-9 text-primary" />
+          </div>
+          <h3 className="text-slate-100 font-bold text-base">All caught up! No new alerts.</h3>
+          <p className="text-slate-500 text-xs mt-1.5">Last checked: {lastCheckedTime}</p>
+        </div>
+      )}
     </div>
   );
 }
