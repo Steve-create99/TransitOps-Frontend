@@ -10,6 +10,8 @@ import {
   MagnifyingGlassIcon,
   BellIcon,
   UserCircleIcon,
+  SunIcon,
+  MoonIcon,
 } from '@heroicons/react/24/outline';
 import { useAppContext } from '../../context/AppContext';
 import { useTransit } from '../../context/TransitContext';
@@ -35,7 +37,7 @@ const PAGE_TITLES = {
  */
 export default function TopNav() {
   const { pathname } = useLocation();
-  const { user }     = useAppContext();
+  const { user, theme, toggleTheme } = useAppContext();
   const { activeAlertsCount } = useTransit();
   const [searchValue, setSearchValue] = useState('');
 
@@ -43,6 +45,7 @@ export default function TopNav() {
   const displayName = user
     ? [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email || 'Operator'
     : 'Operator';
+  const isDark = theme !== 'light';
 
   return (
     <header
@@ -79,6 +82,18 @@ export default function TopNav() {
 
       {/* ── Right Controls ──────────────────────────────── */}
       <div className="flex items-center gap-3">
+        <button
+          id="topnav-theme-toggle"
+          type="button"
+          aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+          title={isDark ? 'Light mode' : 'Dark mode'}
+          onClick={toggleTheme}
+          className="p-2 rounded-lg text-slate-400 hover:bg-surface-light
+                     hover:text-slate-100 transition-colors duration-200"
+        >
+          {isDark ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
+        </button>
+
         {/* Notification bell with live badge count */}
         <button
           id="topnav-notifications"

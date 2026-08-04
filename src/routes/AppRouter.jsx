@@ -20,6 +20,7 @@ import Notifications from '../pages/Notifications';
 import EmptyState    from '../pages/EmptyState';
 import Maps          from '../pages/Maps';
 import Reports       from '../pages/Reports';
+import Settings      from '../pages/Settings';
 
 /**
  * PrivateRoute — redirects unauthenticated users to /login.
@@ -62,7 +63,7 @@ export default function AppRouter() {
           <Route path="/reports"       element={<Reports />} />
           <Route path="/drivers"       element={<EmptyState title="Driver Management" description="Manage driver rosters, schedules, and active duty assignments." />} />
           <Route path="/vehicles"      element={<EmptyState title="Vehicle Fleet"     description="Monitor transit vehicles, maintenance schedules, and telemetry status." />} />
-          <Route path="/settings"      element={<EmptyState title="Settings"          description="Configure global system parameters, notification rules, and admin permissions." />} />
+          <Route path="/settings"      element={<Settings />} />
           <Route path="/empty"         element={<EmptyState />} />
         </Route>
       </Route>

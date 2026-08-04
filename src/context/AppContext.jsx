@@ -4,10 +4,25 @@
 // Date    : 2026
 // ============================================================
 
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { getUser, getAccessToken, saveSession, clearSession, authApi } from '../services/api';
 
 const AppContext = createContext(null);
+const THEME_KEY = 'transitops-theme';
+
+function resolveInitialTheme() {
+  try {
+    const stored = localStorage.getItem(THEME_KEY);
+    if (stored === 'light' || stored === 'dark') return stored;
+  } catch {
+    // ignore
+  }
+  return 'dark';
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+}
 
 /**
  * Derive the initial user on mount.
@@ -26,12 +41,30 @@ function resolveInitialUser() {
 export function AppProvider({ children }) {
   const [user, setUser] = useState(resolveInitialUser);
   const [notificationCount, setNotificationCount] = useState(2);
+  const [theme, setThemeState] = useState(resolveInitialTheme);
 
   // Handle token-expiry logout events fired from api.js
   useEffect(() => {
     const onAuthLogout = () => setUser(null);
     window.addEventListener('auth-logout', onAuthLogout);
     return () => window.removeEventListener('auth-logout', onAuthLogout);
+  }, []);
+
+  useEffect(() => {
+    applyTheme(theme);
+    try {
+      localStorage.setItem(THEME_KEY, theme);
+    } catch {
+      // ignore
+    }
+  }, [theme]);
+
+  const setTheme = useCallback((next) => {
+    setThemeState(next === 'light' ? 'light' : 'dark');
+  }, []);
+
+  const toggleTheme = useCallback(() => {
+    setThemeState((prev) => (prev === 'dark' ? 'light' : 'dark'));
   }, []);
 
   /**
@@ -65,6 +98,10 @@ export function AppProvider({ children }) {
     logout: handleLogout,
     notificationCount,
     setNotificationCount,
+    theme,
+    setTheme,
+    toggleTheme,
+    isDarkMode: theme === 'dark',
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
