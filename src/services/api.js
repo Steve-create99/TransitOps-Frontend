@@ -8,6 +8,14 @@ const DEAD_API_HOSTS = [
   'transitops-backend-production.up.railway.app',
 ];
 
+// #region agent log
+function agentLog(hypothesisId, location, message, data) {
+  // Never call localhost ingest from pages.dev — that itself shows as CORS in DevTools.
+  if (typeof location === 'undefined' || !/localhost|127\.0\.0\.1/.test(location.hostname)) return;
+  fetch('http://127.0.0.1:7662/ingest/af5cdbd3-e666-4f13-8305-0b50610f53d1',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dacdd5'},body:JSON.stringify({sessionId:'dacdd5',runId:'post-fix',hypothesisId,location,message,data,timestamp:Date.now()})}).catch(()=>{});
+}
+// #endregion
+
 function resolveBaseUrl() {
   const envUrl = import.meta.env.VITE_API_URL;
   let base = envUrl;
@@ -35,7 +43,7 @@ function resolveBaseUrl() {
   }
 
   // #region agent log
-  fetch('http://127.0.0.1:7662/ingest/af5cdbd3-e666-4f13-8305-0b50610f53d1',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dacdd5'},body:JSON.stringify({sessionId:'dacdd5',runId:'post-fix',hypothesisId:'A',location:'api.js:resolveBaseUrl',message:'Resolved API BASE_URL',data:{branch,envUrl:envUrl||null,resolved:base,isProd:!!import.meta.env.PROD,origin:typeof location!=='undefined'?location.origin:null},timestamp:Date.now()})}).catch(()=>{});
+  agentLog('A', 'api.js:resolveBaseUrl', 'Resolved API BASE_URL', {branch, envUrl: envUrl || null, resolved: base, isProd: !!import.meta.env.PROD, origin: typeof location !== 'undefined' ? location.origin : null});
   // #endregion
 
   return base;
@@ -237,7 +245,7 @@ export async function request(path, options = {}) {
   const fullUrl = `${BASE_URL}${path}`;
   // #region agent log
   if (path.startsWith('/auth/login')) {
-    fetch('http://127.0.0.1:7662/ingest/af5cdbd3-e666-4f13-8305-0b50610f53d1',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dacdd5'},body:JSON.stringify({sessionId:'dacdd5',runId:'post-fix',hypothesisId:'A',location:'api.js:request:before',message:'Login fetch starting',data:{fullUrl,baseUrl:BASE_URL,origin:typeof location!=='undefined'?location.origin:null},timestamp:Date.now()})}).catch(()=>{});
+    agentLog('A', 'api.js:request:before', 'Login fetch starting', {fullUrl, baseUrl: BASE_URL, origin: typeof location !== 'undefined' ? location.origin : null});
   }
   // #endregion
 
@@ -251,7 +259,7 @@ export async function request(path, options = {}) {
   } catch (err) {
     clearTimeout(timer);
     // #region agent log
-    fetch('http://127.0.0.1:7662/ingest/af5cdbd3-e666-4f13-8305-0b50610f53d1',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dacdd5'},body:JSON.stringify({sessionId:'dacdd5',runId:'post-fix',hypothesisId:'B',location:'api.js:request:catch',message:'Fetch threw (CORS/network)',data:{fullUrl,name:err?.name,errMessage:err?.message,path},timestamp:Date.now()})}).catch(()=>{});
+    agentLog('B', 'api.js:request:catch', 'Fetch threw (CORS/network)', {fullUrl, name: err?.name, errMessage: err?.message, path});
     // #endregion
     if (err.name === 'AbortError') {
       const e = new Error('Request timed out or was cancelled');
@@ -259,7 +267,7 @@ export async function request(path, options = {}) {
       throw e;
     }
     const e = new Error(
-      'Cannot reach the TransitOps API. Check your connection, or hard-refresh if you still see a CORS error after a deploy.'
+      `Cannot reach the TransitOps API (${fullUrl}). Hard-refresh the page if this persists after a deploy.`
     );
     e.status = 0;
     e.cause = err;
@@ -270,7 +278,7 @@ export async function request(path, options = {}) {
 
   // #region agent log
   if (path.startsWith('/auth/login')) {
-    fetch('http://127.0.0.1:7662/ingest/af5cdbd3-e666-4f13-8305-0b50610f53d1',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dacdd5'},body:JSON.stringify({sessionId:'dacdd5',runId:'post-fix',hypothesisId:'C',location:'api.js:request:after',message:'Login response received',data:{fullUrl,status:response.status,ok:response.ok,acao:response.headers.get('access-control-allow-origin')},timestamp:Date.now()})}).catch(()=>{});
+    agentLog('C', 'api.js:request:after', 'Login response received', {fullUrl, status: response.status, ok: response.ok});
   }
   // #endregion
 

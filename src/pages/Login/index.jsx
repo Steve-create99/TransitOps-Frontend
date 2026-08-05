@@ -21,7 +21,7 @@ import {
   ExclamationCircleIcon,
   CheckCircleIcon,
 } from '@heroicons/react/24/outline';
-import { authApi, normalizeAuthResponse } from '../../services/api';
+import { authApi, normalizeAuthResponse, BASE_URL } from '../../services/api';
 import { useAppContext } from '../../context/AppContext';
 
 // ── Background Grid Styling Constants ───────────────────────
@@ -105,7 +105,14 @@ export default function Login() {
       login(user, { accessToken, refreshToken, expiresIn });
       navigate('/dashboard', { replace: true });
     } catch (err) {
-      setError(err.message || 'Invalid email or password. Please try again.');
+      const baseMsg = err.message || 'Invalid email or password. Please try again.';
+      // Temporary verify hint: show which API host the client called
+      const host = (() => {
+        try { return new URL(BASE_URL, window.location.origin).host; } catch { return BASE_URL; }
+      })();
+      setError(err.status === 0 || /Failed to fetch|Cannot reach/i.test(baseMsg)
+        ? `${baseMsg}`
+        : `${baseMsg} (api: ${host})`);
     } finally {
       setLoading(false);
     }
