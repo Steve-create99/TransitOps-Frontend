@@ -5,7 +5,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  TruckIcon,
   LockClosedIcon,
   EyeIcon,
   EyeSlashIcon,
@@ -15,6 +14,7 @@ import {
 import { inviteApi, normalizeAuthResponse } from '../../services/api';
 import { useAppContext } from '../../context/AppContext';
 import { homeForRole } from '../../utils/roles';
+import BrandLogo from '../../components/common/BrandLogo';
 
 export default function InviteAccept() {
   const [params] = useSearchParams();
@@ -84,9 +84,7 @@ export default function InviteAccept() {
     <div className="min-h-screen bg-surface flex items-center justify-center p-4">
       <div className="w-full max-w-md card space-y-5">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl bg-primary/15 flex items-center justify-center">
-            <TruckIcon className="w-6 h-6 text-primary" />
-          </div>
+          <BrandLogo size="md" />
           <div>
             <p className="text-[10px] uppercase tracking-[0.14em] text-primary font-bold">KNUST TransitOps</p>
             <h1 className="text-slate-100 font-semibold text-lg leading-tight">Driver Companion invite</h1>

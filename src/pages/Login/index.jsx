@@ -7,23 +7,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  TruckIcon,
-  EyeIcon,
-  EyeSlashIcon,
-  EnvelopeIcon,
-  LockClosedIcon,
-  UserIcon,
-  BriefcaseIcon,
-  ChevronDownIcon,
-  MapIcon,
-  ChartBarIcon,
-  ClockIcon,
   ExclamationCircleIcon,
   CheckCircleIcon,
 } from '@heroicons/react/24/outline';
 import { authApi, normalizeAuthResponse, BASE_URL } from '../../services/api';
 import { useAppContext } from '../../context/AppContext';
 import { homeForRole } from '../../utils/roles';
+import BrandLogo from '../../components/common/BrandLogo';
 
 // ── Background Grid Styling Constants ───────────────────────
 const diagonalGridStyle = {
@@ -142,9 +132,7 @@ export default function Login() {
         <section className="w-full md:w-1/2 flex flex-col items-center justify-center p-10 relative z-10 bg-white order-2 md:order-1 transition-all">
           {/* Logo Lockup */}
           <div className="flex items-center gap-2 mb-8">
-            <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-              <span className="material-symbols-outlined text-white" style={{ fontVariationSettings: "'FILL' 1" }}>directions_bus</span>
-            </div>
+            <BrandLogo size="md" />
             <span className="text-[24px] font-bold text-slate-900 tracking-tight">TransitOps</span>
           </div>
 

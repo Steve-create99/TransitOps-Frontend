@@ -15,6 +15,7 @@ import {
 import clsx from 'clsx';
 import { useAppContext } from '../context/AppContext';
 import { useTransit } from '../context/TransitContext';
+import BrandLogo from '../components/common/BrandLogo';
 
 const navItems = [
   { to: '/driver', end: true, label: 'Today', icon: HomeIcon },
@@ -57,13 +58,7 @@ export default function DriverLayout() {
 
       <aside className="md:w-64 md:min-h-screen bg-secondary border-b md:border-b-0 md:border-r border-surface-border flex flex-col">
         <div className="flex items-center gap-3 px-5 py-4 border-b border-surface-border">
-          <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center shrink-0 p-1">
-            <img
-              src="https://cdn-icons-png.flaticon.com/512/3448/3448339.png"
-              alt="TransitOps"
-              className="w-full h-full object-contain"
-            />
-          </div>
+          <BrandLogo size="sm" />
           <div>
             <p className="text-white font-bold text-sm leading-tight">TransitOps</p>
             <p className="text-slate-500 text-xs">Driver Portal</p>

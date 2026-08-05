@@ -15,8 +15,8 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     self.registration.showNotification(data.title || 'TransitOps', {
       body: data.body || '',
-      icon: data.icon || '/favicon.svg',
-      badge: '/favicon.svg',
+      icon: data.icon || '/favicon.png',
+      badge: '/favicon.png',
       data: { url: data.url || '/notifications' },
     })
   );

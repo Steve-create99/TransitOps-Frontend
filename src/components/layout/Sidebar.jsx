@@ -20,6 +20,7 @@ import {
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 import { useAppContext } from '../../context/AppContext';
+import BrandLogo from '../common/BrandLogo';
 
 // ── Navigation Link Definitions ─────────────────────────────
 const navItems = [
@@ -70,19 +71,12 @@ export default function Sidebar() {
     >
       {/* ── Brand Logo ──────────────────────────────────── */}
       <div className="flex items-center gap-3 px-6 py-5 border-b border-surface-border">
-        {/* Bus icon as brand mark */}
-        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shrink-0 p-1">
-          <img 
-            src="https://cdn-icons-png.flaticon.com/512/3448/3448339.png" 
-            alt="TransitOps Logo" 
-            className="w-full h-full object-contain"
-          />
-        </div>
+        <BrandLogo size="md" />
         <div>
           <p className="text-white font-bold text-base leading-tight tracking-tight">
             TransitOps
           </p>
-          <p className="text-slate-500 text-xs">Transit Management</p>
+          <p className="text-slate-500 text-xs">KNUST Campus Transit</p>
         </div>
       </div>
 

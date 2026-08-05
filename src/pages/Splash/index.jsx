@@ -5,7 +5,8 @@
 // ============================================================
 
 import { useNavigate } from 'react-router-dom';
-import { TruckIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
+import { ArrowRightIcon } from '@heroicons/react/24/outline';
+import BrandLogo from '../../components/common/BrandLogo';
 
 /**
  * Splash — full-screen brand page shown on first load.
@@ -35,15 +36,7 @@ export default function Splash() {
 
       {/* ── Brand Mark ────────────────────────────────────── */}
       <div className="relative z-10 flex flex-col items-center gap-6">
-        <div
-          className="w-24 h-24 rounded-full bg-white flex items-center justify-center shadow-lg p-3"
-        >
-          <img 
-            src="https://cdn-icons-png.flaticon.com/512/3448/3448339.png" 
-            alt="TransitOps Logo" 
-            className="w-full h-full object-contain"
-          />
-        </div>
+        <BrandLogo size="xl" className="drop-shadow-lg" />
 
         {/* ── App Name ──────────────────────────────────── */}
         <div>
