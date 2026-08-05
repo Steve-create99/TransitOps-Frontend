@@ -129,7 +129,7 @@ export default function RoutesPage() {
       frequency: Number(form.frequency),
       color: form.color,
       status: form.status,
-      buses: form.status === 'Active' ? Math.floor(Math.random() * 4) + 2 : 0,
+      buses: form.status === 'Active' ? 1 : 0,
       type: 'Regular',
       direction: 'Northbound',
     };

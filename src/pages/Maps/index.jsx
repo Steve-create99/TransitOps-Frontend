@@ -21,6 +21,7 @@ export default function Maps() {
     logs,
     clearLogs,
     restoreLogs,
+    vehicleLocations,
   } = useTransit();
 
   // Map state
@@ -164,7 +165,21 @@ export default function Maps() {
         stopsGroup.addLayer(marker);
       });
     }
-  }, [routes, stops, routeFilter, showStops, showRoutes, showLabels]);
+
+    // 3. Live vehicle GPS pins from /api/vehicles/locations
+    (vehicleLocations || []).forEach((v) => {
+      if (v.latitude == null || v.longitude == null) return;
+      const busIcon = L.divIcon({
+        className: 'vehicle-marker',
+        html: `<div style="background:#EF9F27;width:18px;height:18px;border-radius:4px;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#0A1628;">🚌</div>`,
+        iconSize: [18, 18],
+        iconAnchor: [9, 9],
+      });
+      const m = L.marker([v.latitude, v.longitude], { icon: busIcon });
+      m.bindPopup(`<strong>${v.registrationNumber || 'Bus'}</strong><br/>${v.status || ''} · Fuel ${v.fuelLevel ?? '—'}% · GPS ${v.gpsStatus || '—'}`);
+      stopsGroup.addLayer(m);
+    });
+  }, [routes, stops, routeFilter, showStops, showRoutes, showLabels, vehicleLocations]);
 
   // Controls Handlers
   const handleZoomIn = () => {

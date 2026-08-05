@@ -112,50 +112,10 @@ export default function Login() {
   };
 
   // ── Sign Up ─────────────────────────────────────────────────
+  // Self-registration disabled — invite-only via Settings
   const handleSignUp = async (e) => {
     e.preventDefault();
-    resetFeedback();
-
-    if (!firstName || !lastName || !email || !role || !password || !confirmPassword) {
-      setError('Please fill in all fields.');
-      return;
-    }
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters.');
-      return;
-    }
-    if (password !== confirmPassword) {
-      setError('Passwords do not match.');
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const raw = await authApi.register(firstName, lastName, email, role, password);
-      const { accessToken, refreshToken, expiresIn, user: parsedUser } = normalizeAuthResponse(raw);
-
-      if (!accessToken) throw new Error('Account created but no session token was returned. Please sign in manually.');
-
-      const user = parsedUser ?? {
-        email: raw.email ?? email,
-        firstName: raw.firstName ?? firstName,
-        lastName: raw.lastName ?? lastName,
-        role: raw.role ?? role,
-      };
-
-      login(user, { accessToken, refreshToken, expiresIn });
-      navigate('/dashboard', { replace: true });
-    } catch (err) {
-      const msg = err.message || 'Registration failed. Please try again.';
-      setError(
-        err.status === 403
-          ? `${msg} Make sure the dev server is running (npm run dev) so API calls route through /api.`
-          : msg
-      );
-    } finally {
-      setLoading(false);
-    }
+    setError('Self-registration is disabled. Ask an administrator to invite your account.');
   };
 
   // Switch view and clear all feedback + shared fields

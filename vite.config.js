@@ -1,25 +1,33 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// https://vite.dev/config/
-export default defineConfig({
-  plugins: [react()],
-  server: {
-    proxy: {
-      '/api': {
-        target: 'https://transitops-backend-production.up.railway.app',
-        changeOrigin: true,
-        secure: true,
+// Proxy target: VITE_PROXY_TARGET > local backend > Railway fallback
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  const proxyTarget =
+    env.VITE_PROXY_TARGET ||
+    'https://web-production-f8ec21.up.railway.app'
+
+
+  return {
+    plugins: [react()],
+    server: {
+      proxy: {
+        '/api': {
+          target: proxyTarget,
+          changeOrigin: true,
+          secure: true,
+        },
       },
     },
-  },
-  preview: {
-    proxy: {
-      '/api': {
-        target: 'https://transitops-backend-production.up.railway.app',
-        changeOrigin: true,
-        secure: true,
+    preview: {
+      proxy: {
+        '/api': {
+          target: proxyTarget,
+          changeOrigin: true,
+          secure: true,
+        },
       },
     },
-  },
+  }
 })

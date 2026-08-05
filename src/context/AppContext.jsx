@@ -40,7 +40,7 @@ function resolveInitialUser() {
 
 export function AppProvider({ children }) {
   const [user, setUser] = useState(resolveInitialUser);
-  const [notificationCount, setNotificationCount] = useState(2);
+  const [notificationCount, setNotificationCount] = useState(0);
   const [theme, setThemeState] = useState(resolveInitialTheme);
 
   // Handle token-expiry logout events fired from api.js

@@ -1,14 +1,61 @@
 // ============================================================
-// Settings/index.jsx — Appearance & system preferences
+// Settings/index.jsx — Appearance + organization settings (API)
 // ============================================================
 
+import { useEffect, useState } from 'react';
 import { SunIcon, MoonIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
 import { useAppContext } from '../../context/AppContext';
+import { settingsApi, unwrapList } from '../../services/api';
 import clsx from 'clsx';
 
 export default function Settings() {
   const { theme, setTheme, user } = useAppContext();
   const isDark = theme !== 'light';
+  const isAdmin = user?.role === 'ADMIN';
+
+  const [org, setOrg] = useState(null);
+  const [audit, setAudit] = useState([]);
+  const [orgError, setOrgError] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!isAdmin) return undefined;
+    let cancelled = false;
+    (async () => {
+      try {
+        const [settings, logs] = await Promise.all([
+          settingsApi.get(),
+          settingsApi.auditLogs({ size: 20 }),
+        ]);
+        if (!cancelled) {
+          setOrg(settings);
+          setAudit(unwrapList(logs));
+          setOrgError(null);
+        }
+      } catch (err) {
+        if (!cancelled) setOrgError(err.message || 'Could not load settings');
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isAdmin]);
+
+  const saveOrg = async () => {
+    if (!org || !isAdmin) return;
+    setSaving(true);
+    try {
+      const updated = await settingsApi.update({
+        organizationName: org.organizationName,
+        brandingPrimaryColor: org.brandingPrimaryColor,
+        contactEmail: org.contactEmail,
+        timezone: org.timezone,
+      });
+      setOrg(updated);
+    } catch (err) {
+      setOrgError(err.message || 'Save failed');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -18,7 +65,7 @@ export default function Settings() {
           Settings
         </h2>
         <p className="section-subtitle">
-          Appearance preferences for the TransitOps operations portal.
+          Appearance preferences and organization configuration.
         </p>
       </div>
 
@@ -80,12 +127,49 @@ export default function Settings() {
             <dt className="text-slate-500 text-xs uppercase tracking-wide mb-1">Role</dt>
             <dd className="text-slate-200 font-medium">{user?.role || '—'}</dd>
           </div>
-          <div>
-            <dt className="text-slate-500 text-xs uppercase tracking-wide mb-1">Theme</dt>
-            <dd className="text-primary font-semibold capitalize">{theme}</dd>
-          </div>
         </dl>
       </div>
+
+      {isAdmin && (
+        <div className="card space-y-4">
+          <h3 className="text-slate-100 font-semibold text-sm">Organization (API)</h3>
+          {orgError && <p className="text-status-critical text-xs">{orgError}</p>}
+          {org && (
+            <>
+              <input className="w-full h-10 px-3 rounded-lg bg-surface-light border border-surface-border text-sm"
+                value={org.organizationName || ''}
+                onChange={(e) => setOrg((o) => ({ ...o, organizationName: e.target.value }))}
+                placeholder="Organization name" />
+              <input className="w-full h-10 px-3 rounded-lg bg-surface-light border border-surface-border text-sm"
+                value={org.contactEmail || ''}
+                onChange={(e) => setOrg((o) => ({ ...o, contactEmail: e.target.value }))}
+                placeholder="Contact email" />
+              <input className="w-full h-10 px-3 rounded-lg bg-surface-light border border-surface-border text-sm"
+                value={org.timezone || ''}
+                onChange={(e) => setOrg((o) => ({ ...o, timezone: e.target.value }))}
+                placeholder="Timezone" />
+              <button type="button" className="btn-primary w-fit text-sm" disabled={saving} onClick={saveOrg}>
+                {saving ? 'Saving…' : 'Save organization'}
+              </button>
+            </>
+          )}
+
+          <div>
+            <h4 className="text-slate-300 text-xs font-bold uppercase mb-2">Recent audit log</h4>
+            {audit.length === 0 ? (
+              <p className="text-slate-500 text-xs">No audit entries.</p>
+            ) : (
+              <ul className="space-y-1 text-xs text-slate-400 max-h-48 overflow-y-auto">
+                {audit.map((a) => (
+                  <li key={a.id}>
+                    {a.createdAt ? new Date(a.createdAt).toLocaleString() : '—'} — {a.actor} {a.action} {a.entityType}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

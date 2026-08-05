@@ -124,11 +124,8 @@ export default function Schedules() {
       });
     }
 
-    // Add generated schedules to shared state
-    generated.forEach((newRun) => {
-      addSchedule(newRun);
-    });
-
+    // Persist generated runs via API (single batch)
+    addSchedule(generated);
     setIsAddOpen(false);
     // Reset form
     setForm({
