@@ -14,6 +14,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { inviteApi, normalizeAuthResponse } from '../../services/api';
 import { useAppContext } from '../../context/AppContext';
+import { homeForRole } from '../../utils/roles';
 
 export default function InviteAccept() {
   const [params] = useSearchParams();
@@ -71,7 +72,7 @@ export default function InviteAccept() {
         expiresIn: norm.expiresIn,
       });
       setSuccess(raw.message || 'Account activated');
-      setTimeout(() => navigate('/dashboard'), 900);
+      setTimeout(() => navigate(homeForRole(norm.user)), 900);
     } catch (err) {
       setError(err.message || 'Could not accept invite');
     } finally {

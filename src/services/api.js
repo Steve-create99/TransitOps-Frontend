@@ -316,7 +316,10 @@ export async function request(path, options = {}) {
   if (!response.ok) {
     let errorData = {};
     try { errorData = await response.json(); } catch { /* ignore */ }
-    const msg = errorData.error || errorData.message || `Server error (${response.status})`;
+    let msg = errorData.error || errorData.message || `Server error (${response.status})`;
+    if (response.status === 403) {
+      msg = errorData.error || errorData.message || 'You do not have permission to perform this action.';
+    }
     const err = new Error(msg);
     err.status = response.status;
     err.details = errorData;
@@ -409,6 +412,22 @@ export const driversApi = {
   invite: (body) => post('/drivers/invite', body),
   incidents: (id) => get(`/drivers/${id}/incidents`),
   attendance: (id) => get(`/drivers/${id}/attendance`),
+};
+
+/** Self-scoped driver companion APIs */
+export const driverMeApi = {
+  profile: () => get('/drivers/me'),
+  updateProfile: (body) => put('/drivers/me', body),
+  shift: () => get('/drivers/me/shift'),
+  attendanceToday: () => get('/drivers/me/attendance/today'),
+  attendance: () => get('/drivers/me/attendance'),
+  checkIn: () => post('/drivers/me/attendance/check-in', null),
+  checkOut: () => post('/drivers/me/attendance/check-out', null),
+  incidents: () => get('/drivers/me/incidents'),
+  reportIncident: (body) => post('/drivers/me/incidents', body),
+  activeTrip: () => get('/drivers/me/trips/active'),
+  tripStatus: (status) => post('/drivers/me/trips/status', { status }),
+  location: (body) => post('/drivers/me/location', body),
 };
 
 export const inviteApi = {

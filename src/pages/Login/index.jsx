@@ -23,6 +23,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { authApi, normalizeAuthResponse, BASE_URL } from '../../services/api';
 import { useAppContext } from '../../context/AppContext';
+import { homeForRole } from '../../utils/roles';
 
 // ── Background Grid Styling Constants ───────────────────────
 const diagonalGridStyle = {
@@ -103,7 +104,7 @@ export default function Login() {
       if (!accessToken) throw new Error('No token received from server.');
 
       login(user, { accessToken, refreshToken, expiresIn });
-      navigate('/dashboard', { replace: true });
+      navigate(homeForRole(user), { replace: true });
     } catch (err) {
       const baseMsg = err.message || 'Invalid email or password. Please try again.';
       // Temporary verify hint: show which API host the client called

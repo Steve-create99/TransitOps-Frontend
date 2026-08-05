@@ -165,12 +165,42 @@ export function TransitProvider({ children }) {
       setLogs([]);
       setKpis(null);
       setCharts(null);
+      setVehicleLocations([]);
       return;
     }
+
+    const role = String(user.role || '').toUpperCase().replace(/^ROLE_/, '');
+    const staff = role === 'ADMIN' || role === 'DISPATCHER';
 
     setLoading(true);
     setError(null);
     try {
+      // DRIVER: only personal notifications — avoid staff fleet/dashboard APIs (403).
+      if (!staff) {
+        const notifRaw = await notificationsApi.list().catch(() => []);
+        setRoutes([]);
+        setStops([]);
+        setSchedules([]);
+        setKpis(null);
+        setCharts(null);
+        setVehicleLocations([]);
+        setNotifications(unwrapList(notifRaw).map(mapNotification));
+        setLogs(
+          unwrapList(notifRaw)
+            .slice(0, 20)
+            .map((n) => ({
+              id: n.id,
+              time: n.createdAt
+                ? new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                : '',
+              route: n.category || '',
+              stop: '',
+              event: n.title,
+            }))
+        );
+        return;
+      }
+
       const [routesRaw, stopsRaw, schedulesRaw, notifRaw, kpisRaw, chartsRaw, locsRaw] =
         await Promise.all([
           routesApi.list(),
@@ -192,7 +222,7 @@ export function TransitProvider({ children }) {
       setCharts(chartsRaw || null);
       setVehicleLocations(Array.isArray(locsRaw) ? locsRaw : unwrapList(locsRaw));
 
-      if (user.role === 'ADMIN') {
+      if (role === 'ADMIN') {
         try {
           const audit = await settingsApi.auditLogs({ size: 30 });
           setLogs(unwrapList(audit).map(mapAuditLog));
@@ -225,20 +255,27 @@ export function TransitProvider({ children }) {
     loadAll();
   }, [loadAll]);
 
-  // Soft poll KPIs while authenticated (60s)
+  // Soft poll while authenticated (60s) — staff get KPIs; drivers get notifications only
   useEffect(() => {
     if (!user || !getAccessToken()) return undefined;
+    const role = String(user.role || '').toUpperCase().replace(/^ROLE_/, '');
+    const staff = role === 'ADMIN' || role === 'DISPATCHER';
     const id = setInterval(async () => {
       if (document.hidden) return;
       try {
-        const [k, c, n] = await Promise.all([
-          dashboardApi.kpis(),
-          dashboardApi.charts(),
-          notificationsApi.list(),
-        ]);
-        setKpis(k);
-        setCharts(c);
-        setNotifications(unwrapList(n).map(mapNotification));
+        if (staff) {
+          const [k, c, n] = await Promise.all([
+            dashboardApi.kpis(),
+            dashboardApi.charts(),
+            notificationsApi.list(),
+          ]);
+          setKpis(k);
+          setCharts(c);
+          setNotifications(unwrapList(n).map(mapNotification));
+        } else {
+          const n = await notificationsApi.list();
+          setNotifications(unwrapList(n).map(mapNotification));
+        }
       } catch {
         // ignore poll errors
       }
