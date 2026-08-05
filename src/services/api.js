@@ -9,26 +9,35 @@ const DEAD_API_HOSTS = [
 ];
 
 function resolveBaseUrl() {
-  let base = import.meta.env.VITE_API_URL;
+  const envUrl = import.meta.env.VITE_API_URL;
+  let base = envUrl;
+  let branch = 'unset';
 
-  // Stale Cloudflare env still points at the decommissioned Railway app.
-  if (base && DEAD_API_HOSTS.some((host) => String(base).includes(host))) {
-    base = null;
-  }
-
-  // Production: always prefer the known-good Railway URL unless env is a different live host.
+  // Production builds must never trust Cloudflare-baked VITE_API_URL.
+  // A stale Pages env previously pointed at transitops-backend-production (decommissioned),
+  // which caused browser CORS / "Failed to fetch" on login.
   if (import.meta.env.PROD) {
-    if (!base || !String(base).includes('web-production-f8ec21')) {
-      base = DEFAULT_PROD_API;
-    }
+    base = DEFAULT_PROD_API;
+    branch = 'prod-forced-default';
+  } else if (base && DEAD_API_HOSTS.some((host) => String(base).includes(host))) {
+    base = '/api';
+    branch = 'dev-dead-host-to-proxy';
   } else if (!base) {
     base = '/api';
+    branch = 'dev-proxy';
+  } else {
+    branch = 'dev-env';
   }
 
   base = String(base).replace(/\/$/, '');
   if (/^https?:\/\//.test(base) && !base.endsWith('/api')) {
     base = `${base}/api`;
   }
+
+  // #region agent log
+  fetch('http://127.0.0.1:7662/ingest/af5cdbd3-e666-4f13-8305-0b50610f53d1',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dacdd5'},body:JSON.stringify({sessionId:'dacdd5',runId:'post-fix',hypothesisId:'A',location:'api.js:resolveBaseUrl',message:'Resolved API BASE_URL',data:{branch,envUrl:envUrl||null,resolved:base,isProd:!!import.meta.env.PROD,origin:typeof location!=='undefined'?location.origin:null},timestamp:Date.now()})}).catch(()=>{});
+  // #endregion
+
   return base;
 }
 
@@ -225,24 +234,45 @@ export async function request(path, options = {}) {
     else outerSignal.addEventListener('abort', () => controller.abort(), { once: true });
   }
 
+  const fullUrl = `${BASE_URL}${path}`;
+  // #region agent log
+  if (path.startsWith('/auth/login')) {
+    fetch('http://127.0.0.1:7662/ingest/af5cdbd3-e666-4f13-8305-0b50610f53d1',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dacdd5'},body:JSON.stringify({sessionId:'dacdd5',runId:'post-fix',hypothesisId:'A',location:'api.js:request:before',message:'Login fetch starting',data:{fullUrl,baseUrl:BASE_URL,origin:typeof location!=='undefined'?location.origin:null},timestamp:Date.now()})}).catch(()=>{});
+  }
+  // #endregion
+
   let response;
   try {
-    response = await fetch(`${BASE_URL}${path}`, {
+    response = await fetch(fullUrl, {
       ...fetchOptions,
       headers,
       signal: controller.signal,
     });
   } catch (err) {
     clearTimeout(timer);
+    // #region agent log
+    fetch('http://127.0.0.1:7662/ingest/af5cdbd3-e666-4f13-8305-0b50610f53d1',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dacdd5'},body:JSON.stringify({sessionId:'dacdd5',runId:'post-fix',hypothesisId:'B',location:'api.js:request:catch',message:'Fetch threw (CORS/network)',data:{fullUrl,name:err?.name,errMessage:err?.message,path},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
     if (err.name === 'AbortError') {
       const e = new Error('Request timed out or was cancelled');
       e.status = 408;
       throw e;
     }
-    throw err;
+    const e = new Error(
+      'Cannot reach the TransitOps API. Check your connection, or hard-refresh if you still see a CORS error after a deploy.'
+    );
+    e.status = 0;
+    e.cause = err;
+    throw e;
   } finally {
     clearTimeout(timer);
   }
+
+  // #region agent log
+  if (path.startsWith('/auth/login')) {
+    fetch('http://127.0.0.1:7662/ingest/af5cdbd3-e666-4f13-8305-0b50610f53d1',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dacdd5'},body:JSON.stringify({sessionId:'dacdd5',runId:'post-fix',hypothesisId:'C',location:'api.js:request:after',message:'Login response received',data:{fullUrl,status:response.status,ok:response.ok,acao:response.headers.get('access-control-allow-origin')},timestamp:Date.now()})}).catch(()=>{});
+  }
+  // #endregion
 
   if (response.status === 401 && !isAuthPublic && !_retried) {
     try {

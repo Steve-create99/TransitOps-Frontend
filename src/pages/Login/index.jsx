@@ -262,7 +262,7 @@ export default function Login() {
       
       {/* Footer Identity */}
       <footer className="fixed bottom-8 text-slate-400 text-[12px] font-medium">
-        © 2026 Accra Metro Transit Authority. All rights reserved.
+        © 2026 KNUST Campus Transit · TransitOps. All rights reserved.
       </footer>
     </div>
   );
