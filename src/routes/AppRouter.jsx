@@ -23,6 +23,7 @@ import Reports       from '../pages/Reports';
 import Settings      from '../pages/Settings';
 import Drivers       from '../pages/Drivers';
 import Vehicles      from '../pages/Vehicles';
+import InviteAccept  from '../pages/InviteAccept';
 
 /**
  * PrivateRoute — redirects unauthenticated users to /login.
@@ -52,6 +53,7 @@ export default function AppRouter() {
       {/* ── Guest-only Pages (redirect to dashboard if logged in) ── */}
       <Route path="/"      element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<GuestRoute element={<Login  />} />} />
+      <Route path="/invite/accept" element={<InviteAccept />} />
 
       {/* ── Protected App Pages (redirect to /login if not logged in) ── */}
       <Route element={<PrivateRoute />}>

@@ -1,18 +1,37 @@
 // ============================================================
-// Drivers/index.jsx — Driver roster (API-backed)
+// Drivers/index.jsx — Driver roster + email invite (API-backed)
 // ============================================================
 
 import { useEffect, useMemo, useState } from 'react';
-import { UsersIcon, MagnifyingGlassIcon, PlusIcon } from '@heroicons/react/24/outline';
+import {
+  UsersIcon,
+  MagnifyingGlassIcon,
+  PlusIcon,
+  EnvelopeIcon,
+  PencilSquareIcon,
+  TrashIcon,
+} from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 import { driversApi, unwrapList } from '../../services/api';
 import { useTransit } from '../../context/TransitContext';
 import { useAppContext } from '../../context/AppContext';
 
+const emptyForm = {
+  firstName: '',
+  lastName: '',
+  email: '',
+  phone: '',
+  licenseNumber: '',
+  employmentStatus: 'ACTIVE',
+  availability: 'AVAILABLE',
+  assignedRouteId: '',
+};
+
 export default function DriversPage() {
   const { routes, showToast } = useTransit();
   const { user } = useAppContext();
   const canWrite = user?.role === 'ADMIN' || user?.role === 'DISPATCHER';
+  const isAdmin = user?.role === 'ADMIN';
 
   const [drivers, setDrivers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,16 +41,18 @@ export default function DriversPage() {
   const [incidents, setIncidents] = useState([]);
   const [attendance, setAttendance] = useState([]);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({
+  const [showInvite, setShowInvite] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [form, setForm] = useState(emptyForm);
+  const [inviteForm, setInviteForm] = useState({
     firstName: '',
     lastName: '',
     email: '',
     phone: '',
     licenseNumber: '',
-    employmentStatus: 'ACTIVE',
-    availability: 'AVAILABLE',
     assignedRouteId: '',
   });
+  const [inviting, setInviting] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -76,29 +97,83 @@ export default function DriversPage() {
     }
   };
 
-  const handleCreate = async (e) => {
+  const startEdit = (driver) => {
+    setEditingId(driver.id);
+    setShowForm(true);
+    setShowInvite(false);
+    setForm({
+      firstName: driver.firstName || '',
+      lastName: driver.lastName || '',
+      email: driver.email || '',
+      phone: driver.phone || '',
+      licenseNumber: driver.licenseNumber || '',
+      employmentStatus: driver.employmentStatus || 'ACTIVE',
+      availability: driver.availability || 'AVAILABLE',
+      assignedRouteId: driver.assignedRouteId || '',
+    });
+  };
+
+  const handleSave = async (e) => {
     e.preventDefault();
     if (!canWrite) return;
+    const body = {
+      ...form,
+      assignedRouteId: form.assignedRouteId ? Number(form.assignedRouteId) : null,
+    };
     try {
-      await driversApi.create({
-        ...form,
-        assignedRouteId: form.assignedRouteId ? Number(form.assignedRouteId) : null,
-      });
-      showToast('Driver created', 'success');
+      if (editingId) {
+        await driversApi.update(editingId, body);
+        showToast('Driver updated', 'success');
+      } else {
+        await driversApi.create(body);
+        showToast('Driver created', 'success');
+      }
       setShowForm(false);
-      setForm({
+      setEditingId(null);
+      setForm(emptyForm);
+      await load();
+    } catch (err) {
+      showToast(err.message || 'Save failed', 'error');
+    }
+  };
+
+  const handleDelete = async (driver) => {
+    if (!isAdmin) return;
+    if (!window.confirm(`Delete driver ${driver.firstName} ${driver.lastName}?`)) return;
+    try {
+      await driversApi.remove(driver.id);
+      showToast('Driver deleted', 'success');
+      if (selected?.id === driver.id) setSelected(null);
+      await load();
+    } catch (err) {
+      showToast(err.message || 'Delete failed', 'error');
+    }
+  };
+
+  const handleInvite = async (e) => {
+    e.preventDefault();
+    if (!isAdmin) return;
+    setInviting(true);
+    try {
+      const result = await driversApi.invite({
+        ...inviteForm,
+        assignedRouteId: inviteForm.assignedRouteId ? Number(inviteForm.assignedRouteId) : null,
+      });
+      showToast(result.message || 'Invitation sent', result.emailSent === false ? 'warning' : 'success');
+      setShowInvite(false);
+      setInviteForm({
         firstName: '',
         lastName: '',
         email: '',
         phone: '',
         licenseNumber: '',
-        employmentStatus: 'ACTIVE',
-        availability: 'AVAILABLE',
         assignedRouteId: '',
       });
       await load();
     } catch (err) {
-      showToast(err.message || 'Create failed', 'error');
+      showToast(err.message || 'Invite failed', 'error');
+    } finally {
+      setInviting(false);
     }
   };
 
@@ -110,13 +185,39 @@ export default function DriversPage() {
             <UsersIcon className="w-5 h-5 text-primary" />
             Driver Management
           </h2>
-          <p className="section-subtitle">Roster, assignments, attendance and incidents from the API</p>
+          <p className="section-subtitle">Roster, email invites, assignments, attendance and incidents</p>
         </div>
-        {canWrite && (
-          <button type="button" className="btn-primary flex items-center gap-1 text-sm" onClick={() => setShowForm((v) => !v)}>
-            <PlusIcon className="w-4 h-4" /> Add Driver
-          </button>
-        )}
+        <div className="flex flex-wrap gap-2">
+          {isAdmin && (
+            <button
+              type="button"
+              className="btn-primary flex items-center gap-1 text-sm"
+              onClick={() => {
+                setShowInvite((v) => !v);
+                setShowForm(false);
+                setEditingId(null);
+              }}
+            >
+              <EnvelopeIcon className="w-4 h-4" /> Invite by email
+            </button>
+          )}
+          {canWrite && (
+            <button
+              type="button"
+              className="h-10 px-3 rounded-xl border border-surface-border text-sm text-slate-200 hover:border-primary/40"
+              onClick={() => {
+                setShowForm((v) => !v);
+                setShowInvite(false);
+                setEditingId(null);
+                setForm(emptyForm);
+              }}
+            >
+              <span className="inline-flex items-center gap-1">
+                <PlusIcon className="w-4 h-4" /> Add Driver
+              </span>
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="relative max-w-md">
@@ -129,8 +230,40 @@ export default function DriversPage() {
         />
       </div>
 
+      {showInvite && isAdmin && (
+        <form onSubmit={handleInvite} className="card grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <p className="sm:col-span-2 text-xs text-slate-400">
+            Sends a KNUST TransitOps Driver Companion email with an accept link. Self-registration stays disabled.
+          </p>
+          {['firstName', 'lastName', 'email', 'phone', 'licenseNumber'].map((field) => (
+            <input
+              key={field}
+              required={field === 'firstName' || field === 'lastName' || field === 'email'}
+              type={field === 'email' ? 'email' : 'text'}
+              className="h-10 px-3 rounded-lg bg-surface-light border border-surface-border text-sm"
+              placeholder={field}
+              value={inviteForm[field]}
+              onChange={(e) => setInviteForm((f) => ({ ...f, [field]: e.target.value }))}
+            />
+          ))}
+          <select
+            className="h-10 px-3 rounded-lg bg-surface-light border border-surface-border text-sm"
+            value={inviteForm.assignedRouteId}
+            onChange={(e) => setInviteForm((f) => ({ ...f, assignedRouteId: e.target.value }))}
+          >
+            <option value="">No route yet</option>
+            {routes.map((r) => (
+              <option key={r.id} value={r.id}>{r.number} — {r.name}</option>
+            ))}
+          </select>
+          <button type="submit" className="btn-primary sm:col-span-2" disabled={inviting}>
+            {inviting ? 'Sending…' : 'Send invite email'}
+          </button>
+        </form>
+      )}
+
       {showForm && canWrite && (
-        <form onSubmit={handleCreate} className="card grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <form onSubmit={handleSave} className="card grid grid-cols-1 sm:grid-cols-2 gap-3">
           {['firstName', 'lastName', 'email', 'phone', 'licenseNumber'].map((field) => (
             <input
               key={field}
@@ -143,6 +276,16 @@ export default function DriversPage() {
           ))}
           <select
             className="h-10 px-3 rounded-lg bg-surface-light border border-surface-border text-sm"
+            value={form.employmentStatus}
+            onChange={(e) => setForm((f) => ({ ...f, employmentStatus: e.target.value }))}
+          >
+            <option value="ACTIVE">ACTIVE</option>
+            <option value="INVITED">INVITED</option>
+            <option value="ON_LEAVE">ON_LEAVE</option>
+            <option value="INACTIVE">INACTIVE</option>
+          </select>
+          <select
+            className="h-10 px-3 rounded-lg bg-surface-light border border-surface-border text-sm"
             value={form.assignedRouteId}
             onChange={(e) => setForm((f) => ({ ...f, assignedRouteId: e.target.value }))}
           >
@@ -151,7 +294,9 @@ export default function DriversPage() {
               <option key={r.id} value={r.id}>{r.number} — {r.name}</option>
             ))}
           </select>
-          <button type="submit" className="btn-primary sm:col-span-2">Save driver</button>
+          <button type="submit" className="btn-primary sm:col-span-2">
+            {editingId ? 'Update driver' : 'Save driver'}
+          </button>
         </form>
       )}
 
@@ -170,31 +315,43 @@ export default function DriversPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="space-y-3">
           {filtered.map((d) => (
-            <button
+            <div
               key={d.id}
-              type="button"
-              onClick={() => openDetail(d)}
               className={clsx(
                 'card w-full text-left hover:border-primary/40 transition-colors',
                 selected?.id === d.id && 'border-primary'
               )}
             >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-slate-100 font-semibold">{d.firstName} {d.lastName}</p>
-                  <p className="text-slate-500 text-xs mt-0.5">{d.email || 'No email'} · {d.phone || 'No phone'}</p>
-                  <p className="text-slate-400 text-xs mt-1">
-                    {d.assignedRouteName || 'Unassigned'} · License {d.licenseNumber || '—'}
-                  </p>
+              <button type="button" onClick={() => openDetail(d)} className="w-full text-left">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-slate-100 font-semibold">{d.firstName} {d.lastName}</p>
+                    <p className="text-slate-500 text-xs mt-0.5">{d.email || 'No email'} · {d.phone || 'No phone'}</p>
+                    <p className="text-slate-400 text-xs mt-1">
+                      {d.assignedRouteName || 'Unassigned'} · License {d.licenseNumber || '—'}
+                    </p>
+                  </div>
+                  <div className="text-right space-y-1">
+                    <span className={d.employmentStatus === 'ACTIVE' ? 'badge-active' : 'badge-delayed'}>
+                      {d.employmentStatus || '—'}
+                    </span>
+                    <p className="text-[10px] text-slate-500 font-semibold uppercase">{d.availability}</p>
+                  </div>
                 </div>
-                <div className="text-right space-y-1">
-                  <span className={d.employmentStatus === 'ACTIVE' ? 'badge-active' : 'badge-delayed'}>
-                    {d.employmentStatus || '—'}
-                  </span>
-                  <p className="text-[10px] text-slate-500 font-semibold uppercase">{d.availability}</p>
+              </button>
+              {canWrite && (
+                <div className="flex gap-2 mt-3 pt-3 border-t border-surface-border/60">
+                  <button type="button" className="text-xs text-primary inline-flex items-center gap-1" onClick={() => startEdit(d)}>
+                    <PencilSquareIcon className="w-3.5 h-3.5" /> Edit
+                  </button>
+                  {isAdmin && (
+                    <button type="button" className="text-xs text-status-critical inline-flex items-center gap-1" onClick={() => handleDelete(d)}>
+                      <TrashIcon className="w-3.5 h-3.5" /> Delete
+                    </button>
+                  )}
                 </div>
-              </div>
-            </button>
+              )}
+            </div>
           ))}
         </div>
 

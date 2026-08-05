@@ -11,6 +11,7 @@ import {
   FunnelIcon,
   MagnifyingGlassIcon,
   TrashIcon,
+  PencilSquareIcon,
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 import { useTransit } from '../../context/TransitContext';
@@ -25,13 +26,14 @@ const SWATCH_COLORS = [
 ];
 
 export default function RoutesPage() {
-  const { routes, addRoute, deleteRoute, availableStopNames } = useTransit();
+  const { routes, addRoute, updateRoute, deleteRoute, availableStopNames, showToast } = useTransit();
 
   // Search
   const [search, setSearch] = useState('');
 
-  // Add Route form inline card toggle & form fields
+  // Add/Edit Route form inline card toggle & form fields
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({
     number: '',
     name: '',
@@ -114,18 +116,17 @@ export default function RoutesPage() {
     return result;
   }, [routes, search, appliedStatus, appliedFreq, appliedSortBy]);
 
-  const handleSaveRoute = () => {
+  const handleSaveRoute = async () => {
     if (!form.number || !form.name || !form.startStop || !form.endStop || !form.frequency) {
       return;
     }
-    
-    // Convert form into the structure expected by TransitContext
-    const newRoute = {
+
+    const payload = {
       number: form.number,
       name: form.name,
       startStop: form.startStop,
       endStop: form.endStop,
-      intermediateStops: [], // simple initial blank intermediate stops list
+      intermediateStops: [],
       frequency: Number(form.frequency),
       color: form.color,
       status: form.status,
@@ -134,18 +135,36 @@ export default function RoutesPage() {
       direction: 'Northbound',
     };
 
-    addRoute(newRoute);
-    setIsAddOpen(false);
+    try {
+      if (editingId) await updateRoute(editingId, payload);
+      else await addRoute(payload);
+      setIsAddOpen(false);
+      setEditingId(null);
+      setForm({
+        number: '',
+        name: '',
+        startStop: '',
+        endStop: '',
+        frequency: '',
+        color: SWATCH_COLORS[0],
+        status: 'Active',
+      });
+    } catch (err) {
+      showToast(err.message || 'Route save failed', 'error');
+    }
+  };
 
-    // Reset form
+  const startEditRoute = (route) => {
+    setEditingId(route.id);
+    setIsAddOpen(true);
     setForm({
-      number: '',
-      name: '',
-      startStop: '',
-      endStop: '',
-      frequency: '',
-      color: SWATCH_COLORS[0],
-      status: 'Active',
+      number: route.number || route.code || '',
+      name: route.name || '',
+      startStop: route.startStop || '',
+      endStop: route.endStop || '',
+      frequency: String(route.frequency ?? ''),
+      color: route.color || SWATCH_COLORS[0],
+      status: route.status || 'Active',
     });
   };
 
@@ -166,7 +185,10 @@ export default function RoutesPage() {
           type="button"
           id="routes-add-btn"
           className="btn-primary flex items-center gap-2 cursor-pointer"
-          onClick={() => setIsAddOpen((prev) => !prev)}
+          onClick={() => {
+            setEditingId(null);
+            setIsAddOpen((prev) => !prev);
+          }}
         >
           <PlusIcon className="w-4 h-4" />
           Add Route
@@ -181,7 +203,7 @@ export default function RoutesPage() {
         )}
       >
         <div className="card border border-primary/20 bg-surface-light p-5 mb-6">
-          <h3 className="text-slate-100 font-bold text-sm mb-4">Add New Route</h3>
+          <h3 className="text-slate-100 font-bold text-sm mb-4">{editingId ? 'Edit Route' : 'Add New Route'}</h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             
@@ -437,18 +459,30 @@ export default function RoutesPage() {
               key={route.id}
               className="card hover:border-primary/40 transition-all duration-200 cursor-pointer flex flex-col group relative"
             >
-              {/* Delete Route button (allows testing Stop deletion) */}
-              <button
-                type="button"
-                className="absolute top-4 right-4 text-slate-500 hover:text-status-critical p-1 rounded hover:bg-surface-light opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  deleteRoute(route.id);
-                }}
-                title="Delete Route"
-              >
-                <TrashIcon className="w-4 h-4" />
-              </button>
+              <div className="absolute top-4 right-4 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <button
+                  type="button"
+                  className="text-slate-500 hover:text-primary p-1 rounded hover:bg-surface-light"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    startEditRoute(route);
+                  }}
+                  title="Edit Route"
+                >
+                  <PencilSquareIcon className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  className="text-slate-500 hover:text-status-critical p-1 rounded hover:bg-surface-light"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (window.confirm(`Delete route ${route.number}?`)) deleteRoute(route.id);
+                  }}
+                  title="Delete Route"
+                >
+                  <TrashIcon className="w-4 h-4" />
+                </button>
+              </div>
 
               {/* Header */}
               <div className="flex items-start justify-between mb-3.5">

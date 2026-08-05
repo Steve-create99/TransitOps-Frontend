@@ -215,7 +215,9 @@ export async function request(path, options = {}) {
   const isAuthPublic =
     path.startsWith('/auth/login') ||
     path.startsWith('/auth/register') ||
-    path.startsWith('/auth/refresh');
+    path.startsWith('/auth/refresh') ||
+    path.startsWith('/invites/') ||
+    path.startsWith('/push/vapid-public-key');
 
   if (!skipRefresh && !isAuthPublic) {
     try {
@@ -404,8 +406,15 @@ export const driversApi = {
   create: (body) => post('/drivers', body),
   update: (id, body) => put(`/drivers/${id}`, body),
   remove: (id) => del(`/drivers/${id}`),
+  invite: (body) => post('/drivers/invite', body),
   incidents: (id) => get(`/drivers/${id}/incidents`),
   attendance: (id) => get(`/drivers/${id}/attendance`),
+};
+
+export const inviteApi = {
+  peek: (token) => get(`/invites/${encodeURIComponent(token)}`, { skipRefresh: true, skipAuthHeader: true }),
+  accept: (token, password) =>
+    post('/invites/accept', { token, password }, { skipRefresh: true, skipAuthHeader: true }),
 };
 
 export const vehiclesApi = {
@@ -442,10 +451,21 @@ export const settingsApi = {
     const q = new URLSearchParams({ page: 0, size: 50, ...params }).toString();
     return get(`/settings/users?${q}`);
   },
-  invite: (body) => post('/settings/users', body),
+  invite: (body) => post('/settings/users/invite', body),
   patchUser: (id, body) => patch(`/settings/users/${id}`, body),
   auditLogs: (params = {}) => {
     const q = new URLSearchParams({ page: 0, size: 50, ...params }).toString();
     return get(`/settings/audit-logs?${q}`);
   },
+};
+
+export const pushApi = {
+  vapidPublicKey: () => get('/push/vapid-public-key', { skipRefresh: true }),
+  subscribe: (body) => post('/push/subscribe', body),
+  unsubscribe: (endpoint) =>
+    request('/push/subscribe', {
+      method: 'DELETE',
+      body: JSON.stringify({ endpoint }),
+      headers: { 'Content-Type': 'application/json' },
+    }),
 };

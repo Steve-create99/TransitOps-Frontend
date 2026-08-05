@@ -293,6 +293,92 @@ export function TransitProvider({ children }) {
     await loadAll();
   };
 
+  const updateRoute = async (id, patch) => {
+    const existing = routes.find((r) => r.id === id);
+    if (!existing) throw new Error('Route not found');
+    const body = {
+      code: patch.number || patch.code || existing.code || existing.number,
+      name: patch.name ?? existing.name,
+      color: patch.color ?? existing.color,
+      startStop: patch.startStop ?? existing.startStop,
+      endStop: patch.endStop ?? existing.endStop,
+      intermediateStops: patch.intermediateStops ?? existing.intermediateStops ?? [],
+      status: patch.status ?? existing.status,
+      frequencyMinutes: Number(patch.frequency ?? patch.frequencyMinutes ?? existing.frequency) || 15,
+      busCount: Number(patch.buses ?? patch.busCount ?? existing.buses) || 0,
+      type: patch.type ?? existing.type,
+      direction: patch.direction ?? existing.direction,
+    };
+    await routesApi.update(id, body);
+    showToast(`Route ${body.code} updated`, 'success');
+    await loadAll();
+  };
+
+  const addStop = async (newStop) => {
+    await stopsApi.create({
+      name: newStop.name,
+      zone: newStop.zone || 'General',
+      latitude: Number(newStop.lat ?? newStop.latitude),
+      longitude: Number(newStop.lng ?? newStop.longitude),
+      averageRiders: Number(newStop.riders ?? newStop.averageRiders) || 0,
+      wheelchairAccessible: newStop.wheelchairAccessible !== false,
+      status: newStop.status || (newStop.active === false ? 'Inactive' : 'Active'),
+      amenities: newStop.amenities || null,
+    });
+    showToast('Stop created', 'success');
+    await loadAll();
+  };
+
+  const updateStop = async (id, patch) => {
+    const existing = stops.find((s) => s.id === id);
+    if (!existing) throw new Error('Stop not found');
+    await stopsApi.update(id, {
+      name: patch.name ?? existing.name,
+      zone: patch.zone ?? existing.zone,
+      latitude: Number(patch.lat ?? patch.latitude ?? existing.lat),
+      longitude: Number(patch.lng ?? patch.longitude ?? existing.lng),
+      averageRiders: Number(patch.riders ?? patch.averageRiders ?? existing.riders) || 0,
+      wheelchairAccessible: patch.wheelchairAccessible ?? existing.wheelchairAccessible,
+      status: patch.status ?? existing.status,
+      amenities: patch.amenities ?? existing.amenities,
+    });
+    showToast('Stop updated', 'success');
+    await loadAll();
+  };
+
+  const deleteStop = async (id) => {
+    await stopsApi.remove(id);
+    showToast('Stop deleted', 'success');
+    await loadAll();
+  };
+
+  const updateSchedule = async (id, patch) => {
+    const existing = schedules.find((s) => s.id === id);
+    if (!existing) throw new Error('Schedule not found');
+    await scheduleApi.update(id, {
+      routeId: Number(patch.routeId ?? existing.routeId),
+      serviceDate: patch.serviceDate || existing.serviceDate || new Date().toISOString().slice(0, 10),
+      departureTime: patch.departureTime || patch.departure || existing.departure,
+      arrivalTime: patch.arrivalTime || patch.arrival || existing.arrival,
+      weekdays: patch.weekdays ?? existing.weekdays,
+      weekends: patch.weekends ?? existing.weekends,
+      holidays: patch.holidays ?? false,
+      delayStatus: patch.delayStatus || existing.delayStatus || 'ON_TIME',
+      delayMinutes: patch.delayMinutes ?? existing.delayMinutes ?? 0,
+      status: patch.status || existing.status || 'SCHEDULED',
+      driverId: patch.driverId ?? existing.driverId ?? null,
+      vehicleId: patch.vehicleId ?? existing.vehicleId ?? null,
+    });
+    showToast('Schedule updated', 'success');
+    await loadAll();
+  };
+
+  const deleteSchedule = async (id) => {
+    await scheduleApi.remove(id);
+    showToast('Schedule deleted', 'success');
+    await loadAll();
+  };
+
   const addSchedule = async (payload) => {
     const items = Array.isArray(payload) ? payload : [payload];
     for (const newSchedule of items) {
@@ -363,8 +449,14 @@ export function TransitProvider({ children }) {
     error,
     refetch: loadAll,
     addRoute,
+    updateRoute,
     deleteRoute,
+    addStop,
+    updateStop,
+    deleteStop,
     addSchedule,
+    updateSchedule,
+    deleteSchedule,
     markNotificationRead,
     markAllNotificationsRead,
     clearLogs,

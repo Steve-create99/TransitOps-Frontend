@@ -5,14 +5,27 @@
 // ============================================================
 
 import { useState, useMemo } from 'react';
-import { MapPinIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { MapPinIcon, MagnifyingGlassIcon, PlusIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 import { useTransit } from '../../context/TransitContext';
+import { useAppContext } from '../../context/AppContext';
 
 export default function Stops() {
-  const { stops, routes } = useTransit(); // live derived stops
+  const { stops, routes, addStop, updateStop, deleteStop, showToast } = useTransit();
+  const { user } = useAppContext();
+  const canWrite = user?.role === 'ADMIN' || user?.role === 'DISPATCHER';
   const [search, setSearch] = useState('');
   const [hoveredStopName, setHoveredStopName] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [form, setForm] = useState({
+    name: '',
+    zone: 'General',
+    lat: '6.6745',
+    lng: '-1.5716',
+    riders: '0',
+    status: 'Active',
+  });
 
   // Search filter (filters by stop name OR route number)
   const filteredStops = useMemo(() => {
@@ -40,6 +53,50 @@ export default function Stops() {
 
   const activeCount = filteredStops.filter((s) => s.active).length;
 
+  const startEdit = (stop) => {
+    setEditingId(stop.id);
+    setShowForm(true);
+    setForm({
+      name: stop.name || '',
+      zone: stop.zone || 'General',
+      lat: String(stop.lat ?? ''),
+      lng: String(stop.lng ?? ''),
+      riders: String(stop.riders ?? 0),
+      status: stop.status || (stop.active ? 'Active' : 'Inactive'),
+    });
+  };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    if (!canWrite) return;
+    try {
+      const payload = {
+        name: form.name,
+        zone: form.zone,
+        lat: Number(form.lat),
+        lng: Number(form.lng),
+        riders: Number(form.riders) || 0,
+        status: form.status,
+      };
+      if (editingId) await updateStop(editingId, payload);
+      else await addStop(payload);
+      setShowForm(false);
+      setEditingId(null);
+    } catch (err) {
+      showToast(err.message || 'Stop save failed', 'error');
+    }
+  };
+
+  const handleDelete = async (stop) => {
+    if (!canWrite) return;
+    if (!window.confirm(`Delete stop “${stop.name}”?`)) return;
+    try {
+      await deleteStop(stop.id);
+    } catch (err) {
+      showToast(err.message || 'Delete failed', 'error');
+    }
+  };
+
   return (
     <div className="space-y-6">
       
@@ -48,15 +105,63 @@ export default function Stops() {
         <div>
           <h2 className="section-title">Stops</h2>
           <p className="section-subtitle">
-            {stops.length} campus stop points derived · {activeCount} active in current routing
+            {stops.length} campus stop points from API · {activeCount} active in current routing
           </p>
         </div>
         
-        <div className="flex items-center gap-3 text-xs">
+        <div className="flex items-center gap-3 text-xs flex-wrap">
           <span className="badge-active">Active Stops: {stops.filter(s => s.active).length}</span>
           <span className="badge-delayed">Inactive Stops: {stops.filter(s => !s.active).length}</span>
+          {canWrite && (
+            <button
+              type="button"
+              className="btn-primary flex items-center gap-1 text-sm"
+              onClick={() => {
+                setShowForm((v) => !v);
+                setEditingId(null);
+                setForm({
+                  name: '',
+                  zone: 'General',
+                  lat: '6.6745',
+                  lng: '-1.5716',
+                  riders: '0',
+                  status: 'Active',
+                });
+              }}
+            >
+              <PlusIcon className="w-4 h-4" /> Add Stop
+            </button>
+          )}
         </div>
       </div>
+
+      {showForm && canWrite && (
+        <form onSubmit={handleSave} className="card grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <input required className="h-10 px-3 rounded-lg bg-surface-light border border-surface-border text-sm"
+            placeholder="Stop name" value={form.name}
+            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
+          <input className="h-10 px-3 rounded-lg bg-surface-light border border-surface-border text-sm"
+            placeholder="Zone" value={form.zone}
+            onChange={(e) => setForm((f) => ({ ...f, zone: e.target.value }))} />
+          <input required className="h-10 px-3 rounded-lg bg-surface-light border border-surface-border text-sm"
+            placeholder="Latitude" value={form.lat}
+            onChange={(e) => setForm((f) => ({ ...f, lat: e.target.value }))} />
+          <input required className="h-10 px-3 rounded-lg bg-surface-light border border-surface-border text-sm"
+            placeholder="Longitude" value={form.lng}
+            onChange={(e) => setForm((f) => ({ ...f, lng: e.target.value }))} />
+          <input type="number" className="h-10 px-3 rounded-lg bg-surface-light border border-surface-border text-sm"
+            placeholder="Avg riders" value={form.riders}
+            onChange={(e) => setForm((f) => ({ ...f, riders: e.target.value }))} />
+          <select className="h-10 px-3 rounded-lg bg-surface-light border border-surface-border text-sm"
+            value={form.status} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}>
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+          </select>
+          <button type="submit" className="btn-primary sm:col-span-2 text-sm">
+            {editingId ? 'Update stop' : 'Save stop'}
+          </button>
+        </form>
+      )}
 
       {/* ── Search Bar ────────────────────────────────────── */}
       <div className="relative max-w-sm">
@@ -121,6 +226,18 @@ export default function Stops() {
                       );
                     })}
                   </div>
+                  {canWrite && (
+                    <div className="flex gap-3 mt-3 pt-2 border-t border-surface-border/40">
+                      <button type="button" className="text-xs text-primary inline-flex items-center gap-1"
+                        onClick={() => startEdit(stop)}>
+                        <PencilSquareIcon className="w-3.5 h-3.5" /> Edit
+                      </button>
+                      <button type="button" className="text-xs text-status-critical inline-flex items-center gap-1"
+                        onClick={() => handleDelete(stop)}>
+                        <TrashIcon className="w-3.5 h-3.5" /> Delete
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

@@ -18,7 +18,7 @@ import { useTransit } from '../../context/TransitContext';
 const DAYS_OF_WEEK = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export default function Schedules() {
-  const { routes, schedules, addSchedule } = useTransit();
+  const { routes, schedules, addSchedule, deleteSchedule, updateSchedule, showToast } = useTransit();
 
   // Active day index (0 = Mon, ..., 6 = Sun)
   // Default to today's day (shifted: 0=Sun → Mon=0, Sun=6)
@@ -427,13 +427,40 @@ export default function Schedules() {
 
                       {/* Actions */}
                       <td className="px-5 py-3.5">
-                        <button
-                          type="button"
-                          className="text-xs text-primary hover:underline font-bold cursor-pointer"
-                          onClick={() => alert(`Run ID: ${run.id} · Notes: ${run.notes || 'None'}`)}
-                        >
-                          View Notes
-                        </button>
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            className="text-xs text-primary hover:underline font-bold cursor-pointer"
+                            onClick={async () => {
+                              try {
+                                const next = run.delayStatus === 'DELAYED' ? 'ON_TIME' : 'DELAYED';
+                                await updateSchedule(run.id, {
+                                  delayStatus: next,
+                                  delayMinutes: next === 'DELAYED' ? (run.delayMinutes || 5) : 0,
+                                  status: next === 'DELAYED' ? 'DELAYED' : 'SCHEDULED',
+                                });
+                              } catch (err) {
+                                showToast(err.message || 'Update failed', 'error');
+                              }
+                            }}
+                          >
+                            Toggle delay
+                          </button>
+                          <button
+                            type="button"
+                            className="text-xs text-status-critical hover:underline font-bold cursor-pointer"
+                            onClick={async () => {
+                              if (!window.confirm('Delete this schedule run?')) return;
+                              try {
+                                await deleteSchedule(run.id);
+                              } catch (err) {
+                                showToast(err.message || 'Delete failed', 'error');
+                              }
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
