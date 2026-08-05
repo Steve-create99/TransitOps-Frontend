@@ -154,12 +154,30 @@ export default function DriversPage() {
     e.preventDefault();
     if (!isAdmin) return;
     setInviting(true);
+    // #region agent log
+    const _lic = (inviteForm.licenseNumber || '').trim();
+    fetch('http://127.0.0.1:7897/ingest/83a22195-7c60-48a5-a891-98ed1298e176',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'be8849'},body:JSON.stringify({sessionId:'be8849',runId:'pre-fix',hypothesisId:'A',location:'Drivers/index.jsx:handleInvite',message:'invite submit',data:{hasLicense:!!_lic,licenseLen:_lic.length,hasRoute:!!inviteForm.assignedRouteId,emailDomain:(inviteForm.email||'').split('@')[1]||null},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
     try {
       const result = await driversApi.invite({
         ...inviteForm,
         assignedRouteId: inviteForm.assignedRouteId ? Number(inviteForm.assignedRouteId) : null,
       });
-      showToast(result.message || 'Invitation sent', result.emailSent === false ? 'warning' : 'success');
+      // #region agent log
+      fetch('http://127.0.0.1:7897/ingest/83a22195-7c60-48a5-a891-98ed1298e176',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'be8849'},body:JSON.stringify({sessionId:'be8849',runId:'post-fix',hypothesisId:'C',location:'Drivers/index.jsx:handleInvite:ok',message:'invite api ok',data:{emailSent:result?.emailSent===true,status:result?.status||null,hasDriverId:!!result?.driverId,hasAcceptUrl:!!result?.acceptUrl,msgHasDomainHint:/verify a domain|testing domain|Resend/i.test(result?.message||'')},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
+      if (result.emailSent === false && result.acceptUrl) {
+        try {
+          await navigator.clipboard.writeText(result.acceptUrl);
+          showToast((result.message || 'Invite created') + ' Accept link copied to clipboard.', 'warning');
+        } catch {
+          showToast(result.message || 'Invite created (copy accept link from network response)', 'warning');
+          // eslint-disable-next-line no-console
+          console.info('Invite accept URL:', result.acceptUrl);
+        }
+      } else {
+        showToast(result.message || 'Invitation sent', 'success');
+      }
       setShowInvite(false);
       setInviteForm({
         firstName: '',
@@ -171,7 +189,11 @@ export default function DriversPage() {
       });
       await load();
     } catch (err) {
-      showToast(err.message || 'Invite failed', 'error');
+      const msg = err.message || 'Invite failed';
+      // #region agent log
+      fetch('http://127.0.0.1:7897/ingest/83a22195-7c60-48a5-a891-98ed1298e176',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'be8849'},body:JSON.stringify({sessionId:'be8849',runId:'pre-fix',hypothesisId:'A',location:'Drivers/index.jsx:handleInvite:err',message:'invite api error',data:{isDupLicense:/license_number|duplicate key|ukcr60ij/i.test(msg),isConflict:/already exists|conflict/i.test(msg),isResend:/resend|email was not sent/i.test(msg),msgSnippet:String(msg).slice(0,180)},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
+      showToast(msg, 'error');
     } finally {
       setInviting(false);
     }
@@ -234,6 +256,9 @@ export default function DriversPage() {
         <form onSubmit={handleInvite} className="card grid grid-cols-1 sm:grid-cols-2 gap-3">
           <p className="sm:col-span-2 text-xs text-slate-400">
             Sends a KNUST TransitOps Driver Companion email with an accept link. Self-registration stays disabled.
+            While <code className="text-slate-300">RESEND_FROM_EMAIL</code> uses <code className="text-slate-300">onboarding@resend.dev</code>,
+            Resend only delivers to your Resend account email — verify a domain at resend.com/domains to invite other drivers.
+            If email fails, the accept link is copied for you to share manually.
           </p>
           {['firstName', 'lastName', 'email', 'phone', 'licenseNumber'].map((field) => (
             <input
