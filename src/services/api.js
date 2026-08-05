@@ -4,12 +4,27 @@
 
 const DEFAULT_PROD_API = 'https://web-production-f8ec21.up.railway.app/api';
 const REQUEST_TIMEOUT_MS = 30000;
+const DEAD_API_HOSTS = [
+  'transitops-backend-production.up.railway.app',
+];
 
 function resolveBaseUrl() {
   let base = import.meta.env.VITE_API_URL;
-  if (!base) {
-    base = import.meta.env.PROD ? DEFAULT_PROD_API : '/api';
+
+  // Stale Cloudflare env still points at the decommissioned Railway app.
+  if (base && DEAD_API_HOSTS.some((host) => String(base).includes(host))) {
+    base = null;
   }
+
+  // Production: always prefer the known-good Railway URL unless env is a different live host.
+  if (import.meta.env.PROD) {
+    if (!base || !String(base).includes('web-production-f8ec21')) {
+      base = DEFAULT_PROD_API;
+    }
+  } else if (!base) {
+    base = '/api';
+  }
+
   base = String(base).replace(/\/$/, '');
   if (/^https?:\/\//.test(base) && !base.endsWith('/api')) {
     base = `${base}/api`;
