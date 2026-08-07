@@ -1,4 +1,4 @@
-# Enabling browser notifications (web push)
+# Enabling browser notifications (web push).
 
 1. Deploy the backend with `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, and `VAPID_SUBJECT` set (see backend `.env.example`).
 2. Sign in to the admin web app as **ADMIN** or **DISPATCHER**.
