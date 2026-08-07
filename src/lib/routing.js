@@ -2,6 +2,8 @@
 // routing.js — OpenRouteService directions + client cache
 // ============================================================
 
+import { getOrsApiKey } from './mapConfig';
+
 // HeiGIT host (api.openrouteservice.org is deprecated)
 const ORS_BASE = 'https://api.heigit.org/openrouteservice/v2/directions';
 const cache = new Map();
@@ -28,7 +30,7 @@ function remember(key, value) {
  * @returns {Promise<{ geojson: object, distanceM: number, durationS: number }>}
  */
 export async function getRoute(startCoords, endCoords, profile = 'driving-car') {
-  const apiKey = (import.meta.env.VITE_ORS_API_KEY || '').trim();
+  const apiKey = getOrsApiKey();
   if (!apiKey) {
     const err = new Error('Routing unavailable — set VITE_ORS_API_KEY');
     err.code = 'ORS_UNCONFIGURED';

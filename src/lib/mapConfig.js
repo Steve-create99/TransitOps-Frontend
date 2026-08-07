@@ -14,7 +14,11 @@ export const KNUST_BOUNDS = [
   [-1.555, 6.685], // NE
 ];
 
-const mapTilerKey = (import.meta.env.VITE_MAPTILER_KEY || '').trim();
+const FALLBACK_MAPTILER_KEY = 'f6Rld2cwpfSrpFKQHjd0';
+const FALLBACK_ORS_API_KEY = '';
+
+const mapTilerKey = ((import.meta.env.VITE_MAPTILER_KEY || '').trim() || FALLBACK_MAPTILER_KEY).trim();
+const orsApiKey = ((import.meta.env.VITE_ORS_API_KEY || '').trim() || FALLBACK_ORS_API_KEY).trim();
 
 /**
  * MapLibre style URL or inline style.
@@ -33,7 +37,11 @@ export function isMapTilerConfigured() {
 }
 
 export function isOrsConfigured() {
-  return Boolean((import.meta.env.VITE_ORS_API_KEY || '').trim());
+  return Boolean(orsApiKey);
+}
+
+export function getOrsApiKey() {
+  return orsApiKey;
 }
 
 /** Palette for simultaneous route overlays */
