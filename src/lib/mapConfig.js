@@ -14,11 +14,15 @@ export const KNUST_BOUNDS = [
   [-1.555, 6.685], // NE
 ];
 
-const FALLBACK_MAPTILER_KEY = 'f6Rld2cwpfSrpFKQHjd0';
-const FALLBACK_ORS_API_KEY = '';
+const FALLBACK_MAPTILER_KEY = "f6Rld2cwpfSrpFKQHjd0";
+const FALLBACK_ORS_API_KEY = "";
 
-const mapTilerKey = ((import.meta.env.VITE_MAPTILER_KEY || '').trim() || FALLBACK_MAPTILER_KEY).trim();
-const orsApiKey = ((import.meta.env.VITE_ORS_API_KEY || '').trim() || FALLBACK_ORS_API_KEY).trim();
+const mapTilerKey = (
+  (import.meta.env.VITE_MAPTILER_KEY || "").trim() || FALLBACK_MAPTILER_KEY
+).trim();
+const orsApiKey = (
+  (import.meta.env.VITE_ORS_API_KEY || "").trim() || FALLBACK_ORS_API_KEY
+).trim();
 
 /**
  * MapLibre style URL or inline style.
@@ -29,7 +33,7 @@ export function getMapStyle() {
     return `https://api.maptiler.com/maps/streets-v2/style.json?key=${mapTilerKey}`;
   }
   // OpenFreeMap — OSM-based, free, no API key
-  return 'https://tiles.openfreemap.org/styles/liberty';
+  return "https://tiles.openfreemap.org/styles/liberty";
 }
 
 export function isMapTilerConfigured() {
@@ -46,12 +50,12 @@ export function getOrsApiKey() {
 
 /** Palette for simultaneous route overlays */
 export const ROUTE_PALETTE = [
-  '#1D9E75',
-  '#3B82F6',
-  '#EF9F27',
-  '#A78BFA',
-  '#D85A30',
-  '#22D3EE',
-  '#F472B6',
-  '#84CC16',
+  "#1D9E75",
+  "#3B82F6",
+  "#EF9F27",
+  "#A78BFA",
+  "#D85A30",
+  "#22D3EE",
+  "#F472B6",
+  "#84CC16",
 ];
