@@ -244,7 +244,7 @@ export default function Stops() {
           ) : (
             /* Empty State */
             <div className="card text-center py-14">
-              <span className="material-symbols-outlined text-slate-600 text-4xl mb-2">location_off</span>
+              <MapPinIcon className="w-10 h-10 text-slate-600 mb-2 mx-auto" aria-hidden />
               <p className="text-slate-300 font-semibold text-sm">No stops match your search</p>
               <button
                 type="button"

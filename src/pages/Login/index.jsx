@@ -9,6 +9,11 @@ import { useNavigate } from 'react-router-dom';
 import {
   ExclamationCircleIcon,
   CheckCircleIcon,
+  EnvelopeIcon,
+  LockClosedIcon,
+  EyeIcon,
+  EyeSlashIcon,
+  IdentificationIcon,
 } from '@heroicons/react/24/outline';
 import { authApi, normalizeAuthResponse, BASE_URL } from '../../services/api';
 import { useAppContext } from '../../context/AppContext';
@@ -162,7 +167,7 @@ export default function Login() {
           {viewMode === 'signin' ? (
             <form onSubmit={handleSignIn} className="w-full max-w-[320px] flex flex-col gap-4">
               <div className="relative">
-                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">mail</span>
+                <EnvelopeIcon className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden />
                 <input 
                   type="email" required placeholder="Email Address" 
                   value={email} onChange={(e) => { setEmail(e.target.value); resetFeedback(); }}
@@ -170,14 +175,14 @@ export default function Login() {
                 />
               </div>
               <div className="relative">
-                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">lock</span>
+                <LockClosedIcon className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden />
                 <input 
                   type={showPwd ? 'text' : 'password'} required placeholder="Password" 
                   value={password} onChange={(e) => { setPassword(e.target.value); resetFeedback(); }}
                   className="w-full h-[46px] pl-12 pr-12 bg-white border border-slate-200 rounded-full text-[14px] placeholder-slate-400 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" 
                 />
-                <button type="button" onClick={() => setShowPwd(!showPwd)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary">
-                  <span className="material-symbols-outlined">{showPwd ? 'visibility_off' : 'visibility'}</span>
+                <button type="button" onClick={() => setShowPwd(!showPwd)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary" aria-label={showPwd ? 'Hide password' : 'Show password'}>
+                  {showPwd ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
                 </button>
               </div>
               <div className="text-center mt-2">
@@ -194,11 +199,11 @@ export default function Login() {
                   <input type="text" placeholder="Last Name" required value={lastName} onChange={e => setLastName(e.target.value)} className="w-1/2 h-[46px] px-4 border border-slate-200 rounded-full text-[14px] focus:ring-2 focus:ring-primary focus:border-transparent outline-none" />
                </div>
                <div className="relative">
-                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">mail</span>
+                  <EnvelopeIcon className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden />
                   <input type="email" placeholder="Email Address" required value={email} onChange={e => setEmail(e.target.value)} className="w-full h-[46px] pl-12 pr-4 border border-slate-200 rounded-full text-[14px] focus:ring-2 focus:ring-primary focus:border-transparent outline-none" />
                </div>
                <div className="relative">
-                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">badge</span>
+                  <IdentificationIcon className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden />
                   <select required value={role} onChange={e => setRole(e.target.value)} className="w-full h-[46px] pl-12 pr-10 border border-slate-200 rounded-full text-[14px] focus:ring-2 focus:ring-primary focus:border-transparent outline-none appearance-none bg-white">
                     <option value="" disabled>Select Role</option>
                     <option value="ADMIN">Admin</option>
@@ -206,17 +211,17 @@ export default function Login() {
                   </select>
                </div>
                <div className="relative">
-                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">lock</span>
+                  <LockClosedIcon className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden />
                   <input type={showPwd ? 'text' : 'password'} placeholder="Password" required value={password} onChange={e => setPassword(e.target.value)} className="w-full h-[46px] pl-12 pr-12 border border-slate-200 rounded-full text-[14px] focus:ring-2 focus:ring-primary focus:border-transparent outline-none" />
-                  <button type="button" onClick={() => setShowPwd(!showPwd)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary">
-                    <span className="material-symbols-outlined">{showPwd ? 'visibility_off' : 'visibility'}</span>
+                  <button type="button" onClick={() => setShowPwd(!showPwd)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary" aria-label={showPwd ? 'Hide password' : 'Show password'}>
+                    {showPwd ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
                   </button>
                </div>
                <div className="relative">
-                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">lock</span>
+                  <LockClosedIcon className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden />
                   <input type={showConfirmPwd ? 'text' : 'password'} placeholder="Confirm Password" required value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className="w-full h-[46px] pl-12 pr-12 border border-slate-200 rounded-full text-[14px] focus:ring-2 focus:ring-primary focus:border-transparent outline-none" />
-                  <button type="button" onClick={() => setShowConfirmPwd(!showConfirmPwd)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary">
-                    <span className="material-symbols-outlined">{showConfirmPwd ? 'visibility_off' : 'visibility'}</span>
+                  <button type="button" onClick={() => setShowConfirmPwd(!showConfirmPwd)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary" aria-label={showConfirmPwd ? 'Hide password' : 'Show password'}>
+                    {showConfirmPwd ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
                   </button>
                </div>
                <button type="submit" disabled={loading} className="mt-2 h-[46px] bg-primary hover:bg-[#188663] text-white font-bold text-[14px] rounded-full uppercase tracking-wider active:scale-95 transition-all shadow-md disabled:opacity-70 flex justify-center items-center">

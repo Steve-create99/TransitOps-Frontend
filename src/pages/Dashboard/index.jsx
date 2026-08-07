@@ -8,6 +8,7 @@ import {
   ArrowTrendingUpIcon,
   UsersIcon,
   BellIcon,
+  BoltIcon,
 } from '@heroicons/react/24/outline';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
@@ -104,7 +105,7 @@ export default function Dashboard() {
 
         <div id="kpi-speed" className="card flex items-start gap-4">
           <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-[#0A1628] border border-surface-border">
-            <span className="material-symbols-outlined text-primary text-xl">speed</span>
+            <BoltIcon className="w-6 h-6 text-primary" aria-hidden />
           </div>
           <div className="min-w-0">
             <p className="text-slate-400 text-xs font-medium uppercase tracking-wide">Avg Network Speed</p>

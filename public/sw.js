@@ -1,4 +1,6 @@
 /* TransitOps admin web push service worker */
+const BRAND_ICON = '/logo.png';
+
 self.addEventListener('push', (event) => {
   let data = { title: 'TransitOps', body: 'New update', url: '/notifications' };
   try {
@@ -12,11 +14,15 @@ self.addEventListener('push', (event) => {
       /* ignore */
     }
   }
+
+  const icon = data.icon && !String(data.icon).includes('vite') ? data.icon : BRAND_ICON;
+
   event.waitUntil(
     self.registration.showNotification(data.title || 'TransitOps', {
       body: data.body || '',
-      icon: data.icon || '/favicon.png',
-      badge: '/favicon.png',
+      icon,
+      badge: BRAND_ICON,
+      image: undefined,
       data: { url: data.url || '/notifications' },
     })
   );

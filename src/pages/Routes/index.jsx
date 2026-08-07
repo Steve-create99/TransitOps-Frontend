@@ -546,7 +546,7 @@ export default function RoutesPage() {
       ) : (
         /* Empty State */
         <div className="card text-center py-14">
-          <span className="material-symbols-outlined text-slate-600 text-4xl mb-2">map</span>
+          <MapIcon className="w-10 h-10 text-slate-600 mb-2 mx-auto" aria-hidden />
           <p className="text-slate-300 font-semibold text-sm">No routes match your search</p>
           <p className="text-slate-500 text-xs mt-1">Try resetting the filters or clearing the search terms.</p>
           <button

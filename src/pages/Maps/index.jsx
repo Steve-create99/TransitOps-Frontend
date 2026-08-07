@@ -1,18 +1,41 @@
 // ============================================================
-// Maps/index.jsx — KNUST Interactive Transit Map Overlay
-// Author  : TransitOps Dev Team
-// Date    : 2026
+// Maps/index.jsx — KNUST campus map (MapLibre + ORS routing)
 // ============================================================
 
-import { useState, useEffect, useRef } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import {
   ArrowPathIcon,
-  PlusIcon,
-  MinusIcon,
   BellIcon,
+  ClockIcon,
+  MapIcon,
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 import { useTransit } from '../../context/TransitContext';
+import CampusMap from '../../components/map/CampusMap';
+import RouteLayer from '../../components/map/RouteLayer';
+import { StopMarker, VehicleMarker } from '../../components/map/MapMarkers';
+import { ROUTE_PALETTE, isOrsConfigured } from '../../lib/mapConfig';
+import { getRoute, lineStringFromCoords } from '../../lib/routing';
+
+function stopColor(stop, routes) {
+  const count = stop.routes?.length || 0;
+  if (count === 1) {
+    const routeObj = routes.find((r) => r.number === stop.routes[0]);
+    if (routeObj) return routeObj.color;
+  }
+  return '#1D9E75';
+}
+
+function routeStopCoords(route, stops) {
+  return [route.startStop, ...(route.intermediateStops || []), route.endStop]
+    .map((name) => {
+      const s = stops.find((x) => x.name === name);
+      return s && Number.isFinite(s.lng) && Number.isFinite(s.lat)
+        ? [Number(s.lng), Number(s.lat)]
+        : null;
+    })
+    .filter(Boolean);
+}
 
 export default function Maps() {
   const {
@@ -24,178 +47,90 @@ export default function Maps() {
     vehicleLocations,
   } = useTransit();
 
-  // Map state
-  const mapContainerRef = useRef(null);
-  const mapRef = useRef(null);
-  const routesLayerGroupRef = useRef(null);
-  const stopsLayerGroupRef = useRef(null);
-
-  // Floating Control Panel settings
   const [routeFilter, setRouteFilter] = useState('All Routes');
   const [showStops, setShowStops] = useState(true);
   const [showRoutes, setShowRoutes] = useState(true);
-  const [showLabels, setShowLabels] = useState(true);
-
-  // Activity log states
+  const [showLabels, setShowLabels] = useState(false);
   const [clearing, setClearing] = useState(false);
 
-  // Initialize Leaflet Map
-  useEffect(() => {
-    if (!window.L || !mapContainerRef.current) return;
-    const L = window.L;
+  const [planFrom, setPlanFrom] = useState('');
+  const [planTo, setPlanTo] = useState('');
+  const [plannedRoute, setPlannedRoute] = useState(null);
+  const [planMeta, setPlanMeta] = useState(null);
+  const [planError, setPlanError] = useState('');
+  const [planLoading, setPlanLoading] = useState(false);
 
-    // Create map centered on KNUST
-    const map = L.map(mapContainerRef.current, {
-      zoomControl: false,
-      attributionControl: false,
-    }).setView([6.6745, -1.5716], 15);
+  const overlayRoutes = useMemo(() => {
+    if (!showRoutes) return [];
+    return routes
+      .map((route, idx) => {
+        const selected = routeFilter === 'All Routes' || routeFilter === route.number;
+        const coords = routeStopCoords(route, stops);
+        if (coords.length < 2) return null;
+        return {
+          id: String(route.id ?? route.number),
+          color: route.color || ROUTE_PALETTE[idx % ROUTE_PALETTE.length],
+          opacity: selected ? 0.92 : 0.22,
+          width: selected ? 5 : 2.5,
+          data: lineStringFromCoords(coords, { routeNumber: route.number }),
+          number: route.number,
+          name: route.name,
+        };
+      })
+      .filter(Boolean);
+  }, [routes, stops, showRoutes, routeFilter]);
 
-    mapRef.current = map;
-
-    // Add clean dark-styled OpenStreetMap tile layer
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      maxZoom: 19,
-    }).addTo(map);
-
-    // Create layer groups for routing and stops
-    routesLayerGroupRef.current = L.layerGroup().addTo(map);
-    stopsLayerGroupRef.current = L.layerGroup().addTo(map);
-
-    return () => {
-      map.remove();
-    };
-  }, []);
-
-  // Update map overlays on filter or toggle change
-  useEffect(() => {
-    if (!mapRef.current || !window.L) return;
-    const L = window.L;
-    const routesGroup = routesLayerGroupRef.current;
-    const stopsGroup = stopsLayerGroupRef.current;
-
-    routesGroup.clearLayers();
-    stopsGroup.clearLayers();
-
-    // 1. Draw Routes
-    if (showRoutes) {
-      routes.forEach((route) => {
-        const isSelected = routeFilter === 'All Routes' || routeFilter === route.number;
-        const opacity = isSelected ? 0.9 : 0.2;
-        const weight = isSelected ? 5.5 : 2;
-
-        const coords = [route.startStop, ...route.intermediateStops, route.endStop]
-          .map((stopName) => {
-            const stopObj = stops.find((s) => s.name === stopName);
-            return stopObj ? [stopObj.lat, stopObj.lng] : null;
-          })
-          .filter(Boolean);
-
-        if (coords.length > 0) {
-          const polyline = L.polyline(coords, {
-            color: route.color,
-            weight: weight,
-            opacity: opacity,
-            lineJoin: 'round',
-          });
-          routesGroup.addLayer(polyline);
-        }
-      });
-    }
-
-    // 2. Draw Stops
-    if (showStops) {
-      stops.forEach((stop) => {
-        const isSelected = routeFilter === 'All Routes' || stop.routes.includes(routeFilter);
-        const opacity = isSelected ? 1.0 : 0.2;
-
-        const routesCount = stop.routes.length;
-        let color = '#1D9E75'; // multi-route teal
-
-        if (routesCount === 1) {
-          const routeObj = routes.find((r) => r.number === stop.routes[0]);
-          if (routeObj) color = routeObj.color;
-        }
-
-        // Custom divIcon marker matching design guidelines
-        const iconHtml = routesCount > 1
-          ? `<div style="background-color: #1D9E75; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2.5px solid white; color: white; font-size: 10px; font-weight: 800; box-shadow: 0 2px 6px rgba(0,0,0,0.4); opacity: ${opacity};">${routesCount}</div>`
-          : `<div style="background-color: ${color}; width: 16px; height: 16px; border-radius: 50%; border: 2.5px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.4); opacity: ${opacity};"></div>`;
-
-        const icon = L.divIcon({
-          className: 'custom-stop-marker-wrapper',
-          html: iconHtml,
-          iconSize: routesCount > 1 ? [22, 22] : [16, 16],
-          iconAnchor: routesCount > 1 ? [11, 11] : [8, 8],
-        });
-
-        const marker = L.marker([stop.lat, stop.lng], { icon: icon });
-
-        // Popup building
-        const routeBadges = stop.routes
-          .map((routeNum) => {
-            const routeObj = routes.find((r) => r.number === routeNum);
-            const routeColor = routeObj ? routeObj.color : '#1D9E75';
-            return `<span style="background-color: ${routeColor}20; color: ${routeColor}; border: 1px solid ${routeColor}40; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; margin-right: 4px; display: inline-block;">${routeNum}</span>`;
-          })
-          .join('');
-
-        const statusLabel = stop.active
-          ? '<span style="color: #1D9E75; font-weight: bold;">Active ✓</span>'
-          : '<span style="color: #D85A30; font-weight: bold;">Inactive ✗</span>';
-
-        const popupHtml = `
-          <div style="font-family: 'Inter', sans-serif; min-width: 160px; color: #0F1E35;">
-            <p style="font-size: 13px; font-weight: 700; margin: 0 0 6px 0;">${stop.name}</p>
-            <div style="margin-bottom: 8px;">${routeBadges}</div>
-            <p style="font-size: 11px; margin: 3px 0; color: #475569;">Avg daily riders: <strong>${stop.riders}</strong></p>
-            <p style="font-size: 11px; margin: 3px 0; color: #475569;">Status: ${statusLabel}</p>
-          </div>
-        `;
-
-        marker.bindPopup(popupHtml);
-
-        if (showLabels) {
-          marker.bindTooltip(stop.name, {
-            permanent: false,
-            direction: 'top',
-            offset: [0, -10],
-          });
-        }
-
-        stopsGroup.addLayer(marker);
-      });
-    }
-
-    // 3. Live vehicle GPS pins from /api/vehicles/locations
-    (vehicleLocations || []).forEach((v) => {
-      if (v.latitude == null || v.longitude == null) return;
-      const busIcon = L.divIcon({
-        className: 'vehicle-marker',
-        html: `<div style="background:#EF9F27;width:18px;height:18px;border-radius:4px;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#0A1628;">🚌</div>`,
-        iconSize: [18, 18],
-        iconAnchor: [9, 9],
-      });
-      const m = L.marker([v.latitude, v.longitude], { icon: busIcon });
-      m.bindPopup(`<strong>${v.registrationNumber || 'Bus'}</strong><br/>${v.status || ''} · Fuel ${v.fuelLevel ?? '—'}% · GPS ${v.gpsStatus || '—'}`);
-      stopsGroup.addLayer(m);
+  const visibleStops = useMemo(() => {
+    if (!showStops) return [];
+    return stops.filter((stop) => {
+      if (routeFilter === 'All Routes') return true;
+      return (stop.routes || []).includes(routeFilter);
     });
-  }, [routes, stops, routeFilter, showStops, showRoutes, showLabels, vehicleLocations]);
+  }, [stops, showStops, routeFilter]);
 
-  // Controls Handlers
-  const handleZoomIn = () => {
-    if (mapRef.current) mapRef.current.zoomIn();
-  };
+  const showLegend = overlayRoutes.length > 2;
 
-  const handleZoomOut = () => {
-    if (mapRef.current) mapRef.current.zoomOut();
-  };
+  const handlePlanRoute = useCallback(async () => {
+    setPlanError('');
+    setPlannedRoute(null);
+    setPlanMeta(null);
 
-  const handleResetView = () => {
-    if (mapRef.current) {
-      mapRef.current.flyTo([6.6745, -1.5716], 15, { animate: true });
+    if (!isOrsConfigured()) {
+      setPlanError('Routing temporarily unavailable — set VITE_ORS_API_KEY');
+      return;
     }
-    setRouteFilter('All Routes');
-  };
+
+    const from = stops.find((s) => String(s.id) === String(planFrom) || s.name === planFrom);
+    const to = stops.find((s) => String(s.id) === String(planTo) || s.name === planTo);
+    if (!from || !to) {
+      setPlanError('Select a start and end stop from backend data');
+      return;
+    }
+    if (from.id === to.id) {
+      setPlanError('Choose two different stops');
+      return;
+    }
+
+    setPlanLoading(true);
+    try {
+      const result = await getRoute(
+        [Number(from.lng), Number(from.lat)],
+        [Number(to.lng), Number(to.lat)],
+        'driving-car'
+      );
+      setPlannedRoute(result.geojson);
+      setPlanMeta({
+        from: from.name,
+        to: to.name,
+        distanceKm: (result.distanceM / 1000).toFixed(2),
+        durationMin: Math.max(1, Math.round(result.durationS / 60)),
+      });
+    } catch (err) {
+      setPlanError(err.message || 'Routing failed');
+    } finally {
+      setPlanLoading(false);
+    }
+  }, [planFrom, planTo, stops]);
 
   const handleClearOrRestoreLogs = () => {
     if (logs.length === 0) {
@@ -205,29 +140,63 @@ export default function Maps() {
       setTimeout(() => {
         clearLogs();
         setClearing(false);
-      }, 200); // 200ms slide-out animation delay
+      }, 200);
     }
   };
 
   return (
     <div className="flex flex-col gap-6 h-[calc(100vh-112px)] overflow-hidden">
-      
-      {/* ── Main Section (Leaflet Map Container + Side Legend) ── */}
       <div className="flex-1 flex gap-4 min-h-0 relative">
-        
-        {/* Left Side: Map frame */}
         <div className="flex-1 card p-0 relative overflow-hidden bg-[#08131F] border-surface-border select-none">
-          
-          {/* Leaflet instance element */}
-          <div ref={mapContainerRef} className="w-full h-full z-10" />
+          <CampusMap className="w-full h-full absolute inset-0">
+            {overlayRoutes.map((r) => (
+              <RouteLayer
+                key={r.id}
+                id={r.id}
+                data={r.data}
+                color={r.color}
+                width={r.width}
+                opacity={r.opacity}
+              />
+            ))}
+            {plannedRoute ? (
+              <RouteLayer
+                id="ors-planned"
+                data={plannedRoute}
+                color="#F472B6"
+                width={6}
+                opacity={1}
+              />
+            ) : null}
+            {visibleStops.map((stop) => (
+              <StopMarker
+                key={stop.id}
+                stop={stop}
+                color={stopColor(stop, routes)}
+                opacity={
+                  routeFilter === 'All Routes' || (stop.routes || []).includes(routeFilter)
+                    ? 1
+                    : 0.25
+                }
+                showLabel={showLabels}
+              />
+            ))}
+            {(vehicleLocations || []).map((v) => (
+              <VehicleMarker key={v.vehicleId || v.id || v.registrationNumber} vehicle={v} />
+            ))}
+          </CampusMap>
 
-          {/* Floating Control Panel (Top Left) */}
-          <div className="absolute top-4 left-4 z-[1000] bg-white text-slate-800 p-4 rounded-xl shadow-2xl border border-slate-200 w-64">
-            <h4 className="font-bold text-sm mb-3 text-slate-900">Map Filter Control</h4>
-            
-            {/* Route Filter Dropdown */}
+          {/* Filters */}
+          <div className="absolute top-4 left-4 z-20 bg-white text-slate-800 p-4 rounded-xl shadow-2xl border border-slate-200 w-72 max-h-[calc(100%-2rem)] overflow-y-auto">
+            <h4 className="font-bold text-sm mb-3 text-slate-900 flex items-center gap-2">
+              <MapIcon className="w-4 h-4 text-primary" aria-hidden />
+              Map controls
+            </h4>
+
             <div className="mb-4">
-              <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1.5">Route Focus</label>
+              <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1.5" htmlFor="map-route-filter">
+                Route focus
+              </label>
               <select
                 id="map-route-filter"
                 value={routeFilter}
@@ -243,93 +212,94 @@ export default function Maps() {
               </select>
             </div>
 
-            {/* Checkbox Layers Toggles */}
-            <div className="space-y-2 border-t border-slate-100 pt-3">
+            <div className="space-y-2 border-t border-slate-100 pt-3 mb-4">
               <label className="flex items-center gap-2.5 text-xs text-slate-600 font-medium cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={showStops}
-                  onChange={(e) => setShowStops(e.target.checked)}
-                  className="rounded text-primary focus:ring-primary accent-primary"
-                />
-                Show Stops
+                <input type="checkbox" checked={showStops} onChange={(e) => setShowStops(e.target.checked)} className="rounded text-primary accent-primary" />
+                Show stops
               </label>
               <label className="flex items-center gap-2.5 text-xs text-slate-600 font-medium cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={showRoutes}
-                  onChange={(e) => setShowRoutes(e.target.checked)}
-                  className="rounded text-primary focus:ring-primary accent-primary"
-                />
-                Show Routes
+                <input type="checkbox" checked={showRoutes} onChange={(e) => setShowRoutes(e.target.checked)} className="rounded text-primary accent-primary" />
+                Show routes
               </label>
               <label className="flex items-center gap-2.5 text-xs text-slate-600 font-medium cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={showLabels}
-                  onChange={(e) => setShowLabels(e.target.checked)}
-                  className="rounded text-primary focus:ring-primary accent-primary"
-                />
-                Show Labels
+                <input type="checkbox" checked={showLabels} onChange={(e) => setShowLabels(e.target.checked)} className="rounded text-primary accent-primary" />
+                Show stop labels
               </label>
+            </div>
+
+            <div className="border-t border-slate-100 pt-3 space-y-2">
+              <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Plan route (ORS)</p>
+              <select
+                value={planFrom}
+                onChange={(e) => setPlanFrom(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-semibold text-slate-700"
+                aria-label="Start stop"
+              >
+                <option value="">Start stop</option>
+                {stops.map((s) => (
+                  <option key={`from-${s.id}`} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+              <select
+                value={planTo}
+                onChange={(e) => setPlanTo(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-semibold text-slate-700"
+                aria-label="End stop"
+              >
+                <option value="">End stop</option>
+                {stops.map((s) => (
+                  <option key={`to-${s.id}`} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className="btn-primary w-full text-xs py-2"
+                disabled={planLoading}
+                onClick={handlePlanRoute}
+              >
+                {planLoading ? 'Calculating…' : 'Get campus route'}
+              </button>
+              {planMeta ? (
+                <p className="text-[11px] text-slate-600">
+                  {planMeta.from} → {planMeta.to}: {planMeta.distanceKm} km · ~{planMeta.durationMin} min
+                </p>
+              ) : null}
+              {planError ? (
+                <p className="text-[11px] text-status-critical font-medium" role="alert">{planError}</p>
+              ) : null}
+              {!isOrsConfigured() ? (
+                <p className="text-[10px] text-slate-500">Add VITE_ORS_API_KEY to enable turn-by-turn campus routing.</p>
+              ) : null}
             </div>
           </div>
 
-          {/* Floating Map Controls Panel (Top Right) */}
-          <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2 bg-slate-900/90 border border-surface-border p-1.5 rounded-xl shadow-2xl">
-            <button
-              type="button"
-              id="map-reset-view"
-              className="p-2 bg-surface hover:bg-surface-light rounded-lg text-slate-200 hover:text-white transition-colors border border-surface-border"
-              onClick={handleResetView}
-              title="Reset View to Center"
-            >
-              <ArrowPathIcon className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              id="map-zoom-in"
-              className="p-2 bg-surface hover:bg-surface-light rounded-lg text-slate-200 hover:text-white transition-colors border border-surface-border"
-              onClick={handleZoomIn}
-              title="Zoom In"
-            >
-              <PlusIcon className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              id="map-zoom-out"
-              className="p-2 bg-surface hover:bg-surface-light rounded-lg text-slate-200 hover:text-white transition-colors border border-surface-border"
-              onClick={handleZoomOut}
-              title="Zoom Out"
-            >
-              <MinusIcon className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Map Legend Swatches Card (Bottom Right) */}
-          <div className="absolute bottom-4 right-4 z-[1000] bg-slate-900/95 border border-surface-border p-3.5 rounded-xl shadow-2xl max-w-xs text-xs">
-            <p className="font-semibold text-slate-200 mb-2.5 uppercase tracking-widest text-[9px]">Routes Legend</p>
-            <div className="space-y-2">
-              {routes.map((r) => (
-                <div key={r.id} className="flex items-center gap-2">
-                  <span className="w-3.5 h-1 rounded" style={{ backgroundColor: r.color }} />
-                  <span className="text-slate-300 font-medium">{r.number} · {r.name}</span>
-                </div>
-              ))}
+          {showLegend ? (
+            <div className="absolute bottom-4 right-4 z-20 bg-slate-900/95 border border-surface-border p-3.5 rounded-xl shadow-2xl max-w-xs text-xs">
+              <p className="font-semibold text-slate-200 mb-2.5 uppercase tracking-widest text-[9px]">Routes legend</p>
+              <div className="space-y-2 max-h-40 overflow-y-auto">
+                {overlayRoutes.map((r) => (
+                  <div key={r.id} className="flex items-center gap-2">
+                    <span className="w-3.5 h-1 rounded" style={{ backgroundColor: r.color }} />
+                    <span className="text-slate-300 font-medium truncate">{r.number} · {r.name}</span>
+                  </div>
+                ))}
+                {plannedRoute ? (
+                  <div className="flex items-center gap-2 pt-1 border-t border-surface-border">
+                    <span className="w-3.5 h-1 rounded bg-pink-400" />
+                    <span className="text-slate-300 font-medium">ORS planned path</span>
+                  </div>
+                ) : null}
+              </div>
             </div>
-          </div>
-
+          ) : null}
         </div>
       </div>
 
-      {/* ── Bottom Section: Scrollable Activity Event Log ── */}
       <div className="card py-4 flex flex-col justify-between h-48 shrink-0">
-        
-        {/* Log header */}
         <div className="flex items-center justify-between border-b border-surface-border/50 pb-2 mb-3">
           <span className="text-slate-200 font-bold text-xs uppercase tracking-widest flex items-center gap-1.5">
-            <BellIcon className="w-4.5 h-4.5 text-orange-400" />
-            Live Dispatch Activity Log
+            <BellIcon className="w-4 h-4 text-status-delayed" aria-hidden />
+            Live dispatch activity log
           </span>
           <button
             type="button"
@@ -341,15 +311,14 @@ export default function Maps() {
           </button>
         </div>
 
-        {/* Logs content */}
         <div className="flex-1 overflow-y-auto space-y-2 pr-1 scrollbar-thin">
           {logs.length > 0 ? (
             logs.map((log) => (
               <div
                 key={log.id}
                 className={clsx(
-                  "flex items-center justify-between p-2.5 rounded-lg bg-surface-light/40 border border-surface-border/50 text-xs text-slate-300 transform transition-all duration-200",
-                  clearing ? "opacity-0 translate-x-4" : "opacity-100 translate-x-0"
+                  'flex items-center justify-between p-2.5 rounded-lg bg-surface-light/40 border border-surface-border/50 text-xs text-slate-300 transform transition-all duration-200',
+                  clearing ? 'opacity-0 translate-x-4' : 'opacity-100 translate-x-0'
                 )}
               >
                 <div className="flex items-center gap-3">
@@ -365,41 +334,32 @@ export default function Maps() {
                   </span>
                   <span className="font-semibold text-slate-200">{log.stop}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span
-                    className={clsx(
-                      "px-2 py-0.5 rounded-full text-[10px] font-medium border",
-                      log.event.includes('Delayed') && 'bg-status-delayed/10 text-status-delayed border-status-delayed/20',
-                      log.event.includes('Overcrowded') && 'bg-status-critical/10 text-status-critical border-status-critical/20',
-                      log.event === 'Arrived' && 'bg-primary/10 text-primary border-primary/20',
-                      log.event === 'Departed' && 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-                      log.event === 'On time' && 'bg-primary/10 text-primary border-primary/20'
-                    )}
-                  >
-                    {log.event}
-                  </span>
-                </div>
+                <span
+                  className={clsx(
+                    'px-2 py-0.5 rounded-full text-[10px] font-medium border',
+                    log.event.includes('Delayed') && 'bg-status-delayed/10 text-status-delayed border-status-delayed/20',
+                    log.event.includes('Overcrowded') && 'bg-status-critical/10 text-status-critical border-status-critical/20',
+                    log.event === 'Arrived' && 'bg-primary/10 text-primary border-primary/20',
+                    log.event === 'Departed' && 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+                    log.event === 'On time' && 'bg-primary/10 text-primary border-primary/20'
+                  )}
+                >
+                  {log.event}
+                </span>
               </div>
             ))
           ) : (
-            /* Empty State Container */
             <div className="h-full flex flex-col items-center justify-center text-center p-4">
-              <span className="material-symbols-outlined text-slate-600 text-3xl mb-1.5">hourglass_empty</span>
+              <ClockIcon className="w-8 h-8 text-slate-600 mb-1.5" aria-hidden />
               <p className="text-slate-400 text-xs font-semibold">No activity logged yet</p>
-              <button
-                type="button"
-                className="btn-ghost py-1 px-3 mt-2 text-[10px] font-bold"
-                onClick={restoreLogs}
-              >
-                <ArrowPathIcon className="w-3 h-3 inline mr-1" />
-                Restore Original Logs
+              <button type="button" className="btn-ghost py-1 px-3 mt-2 text-[10px] font-bold" onClick={restoreLogs}>
+                <ArrowPathIcon className="w-3 h-3 inline mr-1" aria-hidden />
+                Restore original logs
               </button>
             </div>
           )}
         </div>
-
       </div>
-
     </div>
   );
 }

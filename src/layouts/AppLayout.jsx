@@ -5,6 +5,11 @@
 // ============================================================
 
 import { Outlet } from 'react-router-dom';
+import {
+  CheckCircleIcon,
+  ExclamationTriangleIcon,
+  XCircleIcon,
+} from '@heroicons/react/24/solid';
 import Sidebar from '../components/layout/Sidebar';
 import TopNav  from '../components/layout/TopNav';
 import { useTransit } from '../context/TransitContext';
@@ -30,11 +35,9 @@ export default function AppLayout() {
             toast.type === 'error' && 'bg-status-critical border border-red-500'
           )}
         >
-          <span className="material-symbols-outlined">
-            {toast.type === 'success' && 'check_circle'}
-            {toast.type === 'warning' && 'warning'}
-            {toast.type === 'error' && 'error'}
-          </span>
+          {toast.type === 'success' && <CheckCircleIcon className="w-5 h-5 shrink-0" aria-hidden />}
+          {toast.type === 'warning' && <ExclamationTriangleIcon className="w-5 h-5 shrink-0" aria-hidden />}
+          {toast.type === 'error' && <XCircleIcon className="w-5 h-5 shrink-0" aria-hidden />}
           {toast.message}
         </div>
       )}
