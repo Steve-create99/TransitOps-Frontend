@@ -14,8 +14,8 @@ export const KNUST_BOUNDS = [
   [-1.555, 6.685], // NE
 ];
 
-const FREE_TILE_STYLE_URL = 'https://tiles.openfreemap.org/styles/liberty';
-const orsApiKey = (import.meta.env.VITE_ORS_API_KEY || '').trim();
+const FREE_TILE_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
+const orsApiKey = (import.meta.env.VITE_ORS_API_KEY || "").trim();
 
 /**
  * MapLibre style URL for a free, no-key basemap.
