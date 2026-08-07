@@ -14,14 +14,34 @@ export const KNUST_BOUNDS = [
   [-1.555, 6.685], // NE
 ];
 
-const FREE_TILE_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
+const FREE_TILE_STYLE = {
+  version: 8,
+  sources: {
+    osm: {
+      type: "raster",
+      tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+      tileSize: 256,
+      attribution: "© OpenStreetMap contributors",
+    },
+  },
+  layers: [
+    {
+      id: "osm-raster",
+      type: "raster",
+      source: "osm",
+      minzoom: 0,
+      maxzoom: 19,
+    },
+  ],
+};
+
 const orsApiKey = (import.meta.env.VITE_ORS_API_KEY || "").trim();
 
 /**
- * MapLibre style URL for a free, no-key basemap.
+ * MapLibre style object for a free, no-key basemap.
  */
 export function getMapStyle() {
-  return FREE_TILE_STYLE_URL;
+  return FREE_TILE_STYLE;
 }
 
 export function isOrsConfigured() {
