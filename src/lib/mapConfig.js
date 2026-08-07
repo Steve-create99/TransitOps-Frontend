@@ -17,18 +17,18 @@ export const KNUST_BOUNDS = [
 const FREE_TILE_STYLE = {
   version: 8,
   sources: {
-    osm: {
+    carto: {
       type: "raster",
-      tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+      tiles: ["https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png"],
       tileSize: 256,
-      attribution: "© OpenStreetMap contributors",
+      attribution: "© OpenStreetMap contributors © CARTO",
     },
   },
   layers: [
     {
-      id: "osm-raster",
+      id: "carto-raster",
       type: "raster",
-      source: "osm",
+      source: "carto",
       minzoom: 0,
       maxzoom: 19,
     },
