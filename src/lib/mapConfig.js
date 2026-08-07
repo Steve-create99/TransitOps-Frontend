@@ -14,30 +14,14 @@ export const KNUST_BOUNDS = [
   [-1.555, 6.685], // NE
 ];
 
-const FALLBACK_MAPTILER_KEY = "f6Rld2cwpfSrpFKQHjd0";
-const FALLBACK_ORS_API_KEY = "";
-
-const mapTilerKey = (
-  (import.meta.env.VITE_MAPTILER_KEY || "").trim() || FALLBACK_MAPTILER_KEY
-).trim();
-const orsApiKey = (
-  (import.meta.env.VITE_ORS_API_KEY || "").trim() || FALLBACK_ORS_API_KEY
-).trim();
+const FREE_TILE_STYLE_URL = 'https://tiles.openfreemap.org/styles/liberty';
+const orsApiKey = (import.meta.env.VITE_ORS_API_KEY || '').trim();
 
 /**
- * MapLibre style URL or inline style.
- * Prefers MapTiler when keyed; falls back to OpenFreeMap (no card / no key).
+ * MapLibre style URL for a free, no-key basemap.
  */
 export function getMapStyle() {
-  if (mapTilerKey) {
-    return `https://api.maptiler.com/maps/streets-v2/style.json?key=${mapTilerKey}`;
-  }
-  // OpenFreeMap — OSM-based, free, no API key
-  return "https://tiles.openfreemap.org/styles/liberty";
-}
-
-export function isMapTilerConfigured() {
-  return Boolean(mapTilerKey);
+  return FREE_TILE_STYLE_URL;
 }
 
 export function isOrsConfigured() {

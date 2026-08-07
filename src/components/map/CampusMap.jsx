@@ -7,7 +7,6 @@ import Map, { NavigationControl } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {
   getMapStyle,
-  isMapTilerConfigured,
   KNUST_CENTER,
 } from '../../lib/mapConfig';
 import { MapIcon } from '@heroicons/react/24/outline';
@@ -52,8 +51,7 @@ export default function CampusMap({
         <MapIcon className="w-10 h-10 text-slate-500" aria-hidden />
         <p className="text-sm font-semibold text-slate-200">Map unavailable</p>
         <p className="text-xs text-slate-500 text-center max-w-xs px-4">
-          Could not load map tiles. Check network access
-          {isMapTilerConfigured() ? ' or your VITE_MAPTILER_KEY.' : ' (or set VITE_MAPTILER_KEY for MapTiler).'}
+          Could not load the free OpenFreeMap basemap. Check network access and try again.
         </p>
       </div>
     );
@@ -74,11 +72,9 @@ export default function CampusMap({
         {interactive ? <NavigationControl position="top-right" showCompass={false} /> : null}
         {children}
       </Map>
-      {!isMapTilerConfigured() ? (
-        <div className="pointer-events-none absolute bottom-2 left-2 z-10 rounded-md bg-slate-900/85 px-2 py-1 text-[10px] text-slate-400 border border-surface-border">
-          Open tiles · set VITE_MAPTILER_KEY for MapTiler
-        </div>
-      ) : null}
+      <div className="pointer-events-none absolute bottom-2 left-2 z-10 rounded-md bg-slate-900/85 px-2 py-1 text-[10px] text-slate-400 border border-surface-border">
+        Free OpenFreeMap tiles · no API key required
+      </div>
     </div>
   );
 }
