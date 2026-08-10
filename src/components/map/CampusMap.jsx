@@ -2,7 +2,7 @@
 // CampusMap.jsx — Reusable KNUST MapLibre map shell
 // ============================================================
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useRef, useEffect } from "react";
 import Map, { NavigationControl } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { getMapStyle, KNUST_CENTER } from "../../lib/mapConfig";
@@ -25,6 +25,7 @@ export default function CampusMap({
   interactive = true,
 }) {
   const [failed, setFailed] = useState(false);
+  const errorTimeoutRef = useRef(null);
   const style = useMemo(() => getMapStyle(), []);
   const view = useMemo(
     () => ({
@@ -36,13 +37,32 @@ export default function CampusMap({
 
   const handleError = useCallback((e) => {
     console.error("[CampusMap] tile load error", e?.error || e);
-    setFailed(true);
+    // Debounce error state — only show if error persists for 2 seconds
+    if (!errorTimeoutRef.current) {
+      errorTimeoutRef.current = setTimeout(() => {
+        setFailed(true);
+        errorTimeoutRef.current = null;
+      }, 2000);
+    }
   }, []);
 
   const handleLoad = useCallback((evt) => {
+    // Clear any pending error timeout
+    if (errorTimeoutRef.current) {
+      clearTimeout(errorTimeoutRef.current);
+      errorTimeoutRef.current = null;
+    }
     setFailed(false);
     onLoad?.(evt);
   }, [onLoad]);
+
+  useEffect(() => {
+    return () => {
+      if (errorTimeoutRef.current) {
+        clearTimeout(errorTimeoutRef.current);
+      }
+    };
+  }, []);
 
   if (failed) {
     return (
