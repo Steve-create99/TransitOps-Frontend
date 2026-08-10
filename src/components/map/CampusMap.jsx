@@ -39,6 +39,11 @@ export default function CampusMap({
     setFailed(true);
   }, []);
 
+  const handleLoad = useCallback((evt) => {
+    setFailed(false);
+    onLoad?.(evt);
+  }, [onLoad]);
+
   if (failed) {
     return (
       <div
@@ -64,7 +69,7 @@ export default function CampusMap({
           attributionControl
           interactive={interactive}
           onError={handleError}
-          onLoad={onLoad}
+          onLoad={handleLoad}
         >
           {interactive ? (
             <NavigationControl position="top-right" showCompass={false} />
