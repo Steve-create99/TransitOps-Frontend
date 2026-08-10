@@ -5,7 +5,7 @@
 import { useCallback, useMemo, useState } from "react";
 import Map, { NavigationControl } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { getMapStyle, KNUST_CENTER } from "../../lib/mapConfig";
+import { getMapStyle, KNUST_CENTER, OPEN_STREET_MAP_STYLE } from "../../lib/mapConfig";
 import { MapIcon } from "@heroicons/react/24/outline";
 
 /**
@@ -15,6 +15,7 @@ import { MapIcon } from "@heroicons/react/24/outline";
  *   className?: string,
  *   onLoad?: (evt) => void,
  *   interactive?: boolean,
+ *   mapProvider?: string,
  * }} props
  */
 export default function CampusMap({
@@ -23,9 +24,11 @@ export default function CampusMap({
   className = "",
   onLoad,
   interactive = true,
+  mapProvider,
 }) {
   const [failed, setFailed] = useState(false);
-  const style = useMemo(() => getMapStyle(), []);
+  const [activeStyle, setActiveStyle] = useState(() => getMapStyle(mapProvider));
+
   const view = useMemo(
     () => ({
       ...KNUST_CENTER,
@@ -36,8 +39,13 @@ export default function CampusMap({
 
   const handleError = useCallback((e) => {
     console.error("[CampusMap] style/load error", e?.error || e);
-    setFailed(true);
-  }, []);
+    if (activeStyle !== OPEN_STREET_MAP_STYLE) {
+      console.warn("[CampusMap] Falling back to OpenStreetMap standard tiles");
+      setActiveStyle(OPEN_STREET_MAP_STYLE);
+    } else {
+      setFailed(true);
+    }
+  }, [activeStyle]);
 
   if (failed) {
     return (
@@ -48,32 +56,33 @@ export default function CampusMap({
         <MapIcon className="w-10 h-10 text-slate-500" aria-hidden />
         <p className="text-sm font-semibold text-slate-200">Map unavailable</p>
         <p className="text-xs text-slate-500 text-center max-w-xs px-4">
-          Could not load the free CARTO basemap. Check network access and try
-          again.
+          Could not load free basemap tiles. Check network access and try again.
         </p>
       </div>
     );
   }
 
   return (
-    <div className={`relative w-full h-full min-h-[280px] ${className}`}>
-      <Map
-        mapStyle={style}
-        initialViewState={view}
-        style={{ width: "100%", height: "100%" }}
-        attributionControl
-        reuseMaps
-        interactive={interactive}
-        onError={handleError}
-        onLoad={onLoad}
-      >
-        {interactive ? (
-          <NavigationControl position="top-right" showCompass={false} />
-        ) : null}
-        {children}
-      </Map>
-      <div className="pointer-events-none absolute bottom-2 left-2 z-10 rounded-md bg-slate-900/85 px-2 py-1 text-[10px] text-slate-400 border border-surface-border">
-        Free CARTO tiles · no API key required
+    <div className={`relative w-full h-full min-h-[280px] overflow-hidden ${className}`}>
+      <div className="w-full h-full dark-map-tiles">
+        <Map
+          mapStyle={activeStyle}
+          initialViewState={view}
+          style={{ width: "100%", height: "100%" }}
+          attributionControl
+          reuseMaps
+          interactive={interactive}
+          onError={handleError}
+          onLoad={onLoad}
+        >
+          {interactive ? (
+            <NavigationControl position="top-right" showCompass={false} />
+          ) : null}
+          {children}
+        </Map>
+      </div>
+      <div className="pointer-events-none absolute bottom-2 left-2 z-10 rounded-md bg-slate-900/85 px-2 py-1 text-[10px] text-slate-400 border border-surface-border uninvert-overlay">
+        OpenFreeMap · © OpenStreetMap contributors
       </div>
     </div>
   );
