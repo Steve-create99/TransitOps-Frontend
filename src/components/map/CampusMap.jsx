@@ -5,7 +5,12 @@
 import { useCallback, useMemo, useState } from "react";
 import Map, { NavigationControl } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { getMapStyle, KNUST_CENTER, OPEN_STREET_MAP_STYLE } from "../../lib/mapConfig";
+import {
+  getMapStyle,
+  KNUST_CENTER,
+  CARTO_DARK_STYLE,
+  OPEN_STREET_MAP_STYLE,
+} from "../../lib/mapConfig";
 import { MapIcon } from "@heroicons/react/24/outline";
 
 /**
@@ -28,6 +33,7 @@ export default function CampusMap({
 }) {
   const [failed, setFailed] = useState(false);
   const [activeStyle, setActiveStyle] = useState(() => getMapStyle(mapProvider));
+  const [mapKey, setMapKey] = useState(0);
 
   const view = useMemo(
     () => ({
@@ -39,9 +45,14 @@ export default function CampusMap({
 
   const handleError = useCallback((e) => {
     console.error("[CampusMap] style/load error", e?.error || e);
-    if (activeStyle !== OPEN_STREET_MAP_STYLE) {
+    if (activeStyle !== CARTO_DARK_STYLE && activeStyle !== OPEN_STREET_MAP_STYLE) {
+      console.warn("[CampusMap] Falling back to CARTO Dark Matter tiles");
+      setActiveStyle(CARTO_DARK_STYLE);
+      setMapKey((k) => k + 1);
+    } else if (activeStyle === CARTO_DARK_STYLE) {
       console.warn("[CampusMap] Falling back to OpenStreetMap standard tiles");
       setActiveStyle(OPEN_STREET_MAP_STYLE);
+      setMapKey((k) => k + 1);
     } else {
       setFailed(true);
     }
@@ -62,10 +73,15 @@ export default function CampusMap({
     );
   }
 
+  const isDarkStyle =
+    activeStyle === CARTO_DARK_STYLE ||
+    (typeof activeStyle === "string" && activeStyle.includes("positron"));
+
   return (
     <div className={`relative w-full h-full min-h-[280px] overflow-hidden ${className}`}>
-      <div className="w-full h-full dark-map-tiles">
+      <div className={`w-full h-full ${isDarkStyle ? "" : "dark-map-tiles"}`}>
         <Map
+          key={mapKey}
           mapStyle={activeStyle}
           initialViewState={view}
           style={{ width: "100%", height: "100%" }}
@@ -82,7 +98,7 @@ export default function CampusMap({
         </Map>
       </div>
       <div className="pointer-events-none absolute bottom-2 left-2 z-10 rounded-md bg-slate-900/85 px-2 py-1 text-[10px] text-slate-400 border border-surface-border uninvert-overlay">
-        OpenFreeMap · © OpenStreetMap contributors
+        OpenFreeMap / CARTO · © OpenStreetMap contributors
       </div>
     </div>
   );
