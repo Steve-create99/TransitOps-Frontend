@@ -67,6 +67,7 @@ export default function Login() {
   // Feedback states
   const [error,   setError]   = useState('');
   const [success, setSuccess] = useState('');
+  const [errorRetryable, setErrorRetryable] = useState(false);
 
   // Evaluate password strength metrics
   const getPasswordStrength = (val) => {
@@ -82,14 +83,16 @@ export default function Login() {
   function resetFeedback() {
     setError('');
     setSuccess('');
+    setErrorRetryable(false);
   }
 
   // ── Sign In ─────────────────────────────────────────────────
   const handleSignIn = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     if (!email || !password) return;
 
     resetFeedback();
+    setErrorRetryable(false);
     setLoading(true);
 
     try {
@@ -101,14 +104,31 @@ export default function Login() {
       login(user, { accessToken, refreshToken, expiresIn });
       navigate(homeForRole(user), { replace: true });
     } catch (err) {
-      const baseMsg = err.message || 'Invalid email or password. Please try again.';
-      // Temporary verify hint: show which API host the client called
-      const host = (() => {
-        try { return new URL(BASE_URL, window.location.origin).host; } catch { return BASE_URL; }
-      })();
-      setError(err.status === 0 || /Failed to fetch|Cannot reach/i.test(baseMsg)
-        ? `${baseMsg}`
-        : `${baseMsg} (api: ${host})`);
+      const status = err.status || 0;
+      let errorMsg = '';
+      let isRetryable = false;
+
+      // Distinguish between different error types
+      if (status === 0 || /Failed to fetch|Cannot reach/i.test(err.message)) {
+        // Network error or server unreachable
+        errorMsg = 'Unable to connect to the server. Check your internet connection or try again in a moment.';
+        isRetryable = true;
+      } else if (status >= 500) {
+        // Server error (502, 503, etc.)
+        errorMsg = `Server error (${status}). The service is temporarily unavailable. Please try again.`;
+        isRetryable = true;
+      } else if (status === 401 || status === 400) {
+        // Authentication error
+        errorMsg = 'Invalid email or password. Please try again.';
+        isRetryable = false;
+      } else {
+        // Generic error
+        errorMsg = err.message || 'An error occurred. Please try again.';
+        isRetryable = /timeout|network|temporarily|unavailable/i.test(err.message);
+      }
+
+      setError(errorMsg);
+      setErrorRetryable(isRetryable);
     } finally {
       setLoading(false);
     }
@@ -152,8 +172,20 @@ export default function Login() {
           {/* Feedback */}
           {error && (
             <div className="w-full max-w-[320px] mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-lg flex items-start gap-2">
-              <ExclamationCircleIcon className="w-5 h-5 shrink-0" />
-              <span>{error}</span>
+              <ExclamationCircleIcon className="w-5 h-5 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p>{error}</p>
+                {errorRetryable && (
+                  <button
+                    type="button"
+                    onClick={handleSignIn}
+                    disabled={loading}
+                    className="mt-2 text-xs font-semibold text-red-700 underline hover:text-red-800 disabled:opacity-50"
+                  >
+                    Try again
+                  </button>
+                )}
+              </div>
             </div>
           )}
           {success && (
