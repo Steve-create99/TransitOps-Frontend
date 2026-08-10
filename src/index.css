@@ -254,4 +254,18 @@
     background-color: var(--brand-scrollbar);
     border-radius: 9999px;
   }
+
+  /* OpenFreeMap visual dark theme filter */
+  .dark-map-tiles .maplibregl-canvas-container canvas,
+  .dark-map-container .maplibregl-canvas-container canvas {
+    filter: invert(90%) hue-rotate(180deg) brightness(95%) contrast(90%);
+  }
+
+  /* Un-invert any UI overlays/labels on top of the map */
+  .dark-map-tiles .maplibregl-marker,
+  .dark-map-tiles .maplibregl-popup,
+  .dark-map-tiles .maplibregl-ctrl,
+  .uninvert-overlay {
+    filter: none;
+  }
 }

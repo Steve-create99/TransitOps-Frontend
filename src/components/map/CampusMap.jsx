@@ -2,7 +2,7 @@
 // CampusMap.jsx — Reusable KNUST MapLibre map shell
 // ============================================================
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useRef, useEffect } from "react";
 import Map, { NavigationControl } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { getMapStyle, KNUST_CENTER } from "../../lib/mapConfig";
@@ -25,6 +25,7 @@ export default function CampusMap({
   interactive = true,
 }) {
   const [failed, setFailed] = useState(false);
+  const errorTimeoutRef = useRef(null);
   const style = useMemo(() => getMapStyle(), []);
   const view = useMemo(
     () => ({
@@ -35,8 +36,32 @@ export default function CampusMap({
   );
 
   const handleError = useCallback((e) => {
-    console.error("[CampusMap] style/load error", e?.error || e);
-    setFailed(true);
+    console.error("[CampusMap] tile load error", e?.error || e);
+    // Debounce error state — only show if error persists for 2 seconds
+    if (!errorTimeoutRef.current) {
+      errorTimeoutRef.current = setTimeout(() => {
+        setFailed(true);
+        errorTimeoutRef.current = null;
+      }, 2000);
+    }
+  }, []);
+
+  const handleLoad = useCallback((evt) => {
+    // Clear any pending error timeout
+    if (errorTimeoutRef.current) {
+      clearTimeout(errorTimeoutRef.current);
+      errorTimeoutRef.current = null;
+    }
+    setFailed(false);
+    onLoad?.(evt);
+  }, [onLoad]);
+
+  useEffect(() => {
+    return () => {
+      if (errorTimeoutRef.current) {
+        clearTimeout(errorTimeoutRef.current);
+      }
+    };
   }, []);
 
   if (failed) {
@@ -48,32 +73,32 @@ export default function CampusMap({
         <MapIcon className="w-10 h-10 text-slate-500" aria-hidden />
         <p className="text-sm font-semibold text-slate-200">Map unavailable</p>
         <p className="text-xs text-slate-500 text-center max-w-xs px-4">
-          Could not load the free CARTO basemap. Check network access and try
-          again.
+          Could not load map tiles. Check your network connection and try again.
         </p>
       </div>
     );
   }
 
   return (
-    <div className={`relative w-full h-full min-h-[280px] ${className}`}>
-      <Map
-        mapStyle={style}
-        initialViewState={view}
-        style={{ width: "100%", height: "100%" }}
-        attributionControl
-        reuseMaps
-        interactive={interactive}
-        onError={handleError}
-        onLoad={onLoad}
-      >
-        {interactive ? (
-          <NavigationControl position="top-right" showCompass={false} />
-        ) : null}
-        {children}
-      </Map>
-      <div className="pointer-events-none absolute bottom-2 left-2 z-10 rounded-md bg-slate-900/85 px-2 py-1 text-[10px] text-slate-400 border border-surface-border">
-        Free CARTO tiles · no API key required
+    <div className={`relative w-full h-full min-h-[280px] overflow-hidden ${className}`}>
+      <div className="w-full h-full dark-map-tiles">
+        <Map
+          mapStyle={style}
+          initialViewState={view}
+          style={{ width: "100%", height: "100%" }}
+          attributionControl
+          interactive={interactive}
+          onError={handleError}
+          onLoad={handleLoad}
+        >
+          {interactive ? (
+            <NavigationControl position="top-right" showCompass={false} />
+          ) : null}
+          {children}
+        </Map>
+      </div>
+      <div className="pointer-events-none absolute bottom-2 left-2 z-10 rounded-md bg-slate-900/85 px-2 py-1 text-[10px] text-slate-400 border border-surface-border uninvert-overlay">
+        © OpenStreetMap contributors
       </div>
     </div>
   );
