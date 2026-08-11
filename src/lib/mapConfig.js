@@ -15,31 +15,89 @@ export const KNUST_BOUNDS = [
 ];
 
 /**
- * Plain OpenStreetMap raster tiles — free forever, no API key, no signup.
- * This is an inline MapLibre style object pointing directly at tile PNGs.
- * Nothing external to fetch or parse — it just works.
+ * Free, resilient map styles requiring NO API key or billing:
+ * 1. CARTO Dark Matter (Default) — dark theme matching TransitOps UI
+ * 2. OpenFreeMap Dark — vector tile style
+ * 3. CARTO Voyager — light basemap for bright environments
+ * 4. Esri Satellite — satellite aerial imagery
  */
-const OSM_RASTER_STYLE = {
-  version: 8,
-  sources: {
-    osm: {
-      type: "raster",
-      tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
-      tileSize: 256,
-      attribution: "© OpenStreetMap contributors",
+export const MAP_STYLES = {
+  dark: {
+    id: "dark",
+    name: "Dark Transit (CARTO)",
+    style: {
+      version: 8,
+      sources: {
+        carto_dark: {
+          type: "raster",
+          tiles: [
+            "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+            "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+            "https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+            "https://d.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+          ],
+          tileSize: 256,
+          attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>',
+        },
+      },
+      layers: [{ id: "carto-dark-layer", type: "raster", source: "carto_dark", minzoom: 0, maxzoom: 20 }],
     },
   },
-  layers: [{ id: "osm", type: "raster", source: "osm" }],
+  openfreemap: {
+    id: "openfreemap",
+    name: "OpenFreeMap Vector",
+    style: "https://tiles.openfreemap.org/styles/dark",
+  },
+  light: {
+    id: "light",
+    name: "Light Voyager (CARTO)",
+    style: {
+      version: 8,
+      sources: {
+        carto_voyager: {
+          type: "raster",
+          tiles: [
+            "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+            "https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+            "https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+            "https://d.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+          ],
+          tileSize: 256,
+          attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>',
+        },
+      },
+      layers: [{ id: "carto-voyager-layer", type: "raster", source: "carto_voyager", minzoom: 0, maxzoom: 20 }],
+    },
+  },
+  satellite: {
+    id: "satellite",
+    name: "Satellite (Esri)",
+    style: {
+      version: 8,
+      sources: {
+        esri_satellite: {
+          type: "raster",
+          tiles: [
+            "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+          ],
+          tileSize: 256,
+          attribution: "Tiles © Esri — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community",
+        },
+      },
+      layers: [{ id: "esri-satellite-layer", type: "raster", source: "esri_satellite", minzoom: 0, maxzoom: 19 }],
+    },
+  },
 };
 
 const orsApiKey = (import.meta.env.VITE_ORS_API_KEY || "").trim();
 
 /**
- * Returns the MapLibre style object. Always returns the inline OSM
- * raster style — no remote JSON to fetch, no API keys, no CORS issues.
+ * Returns the MapLibre style object or URL based on key.
+ * Defaults to CARTO Dark Matter.
  */
-export function getMapStyle() {
-  return OSM_RASTER_STYLE;
+export function getMapStyle(styleKey = "dark") {
+  const item = MAP_STYLES[styleKey] || MAP_STYLES.dark;
+  return item.style;
 }
 
 export function isOrsConfigured() {
@@ -61,3 +119,4 @@ export const ROUTE_PALETTE = [
   "#F472B6",
   "#84CC16",
 ];
+

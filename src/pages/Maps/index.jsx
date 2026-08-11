@@ -14,7 +14,7 @@ import { useTransit } from '../../context/TransitContext';
 import CampusMap from '../../components/map/CampusMap';
 import RouteLayer from '../../components/map/RouteLayer';
 import { StopMarker, VehicleMarker } from '../../components/map/MapMarkers';
-import { ROUTE_PALETTE, isOrsConfigured } from '../../lib/mapConfig';
+import { ROUTE_PALETTE, isOrsConfigured, MAP_STYLES } from '../../lib/mapConfig';
 import { getRoute, lineStringFromCoords } from '../../lib/routing';
 
 function stopColor(stop, routes) {
@@ -47,11 +47,13 @@ export default function Maps() {
     vehicleLocations,
   } = useTransit();
 
+  const [mapStyleKey, setMapStyleKey] = useState('dark');
   const [routeFilter, setRouteFilter] = useState('All Routes');
   const [showStops, setShowStops] = useState(true);
   const [showRoutes, setShowRoutes] = useState(true);
   const [showLabels, setShowLabels] = useState(false);
   const [clearing, setClearing] = useState(false);
+
 
   const [planFrom, setPlanFrom] = useState('');
   const [planTo, setPlanTo] = useState('');
@@ -148,7 +150,7 @@ export default function Maps() {
     <div className="flex flex-col gap-6 h-[calc(100vh-112px)] overflow-hidden">
       <div className="flex-1 flex gap-4 min-h-0 relative">
         <div className="flex-1 card p-0 relative overflow-hidden bg-[#08131F] border-surface-border select-none">
-          <CampusMap className="w-full h-full absolute inset-0">
+          <CampusMap mapStyleKey={mapStyleKey} className="w-full h-full absolute inset-0">
             {overlayRoutes.map((r) => (
               <RouteLayer
                 key={r.id}
@@ -192,6 +194,24 @@ export default function Maps() {
               <MapIcon className="w-4 h-4 text-primary" aria-hidden />
               Map controls
             </h4>
+
+            <div className="mb-3">
+              <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1.5" htmlFor="map-style-filter">
+                Map style
+              </label>
+              <select
+                id="map-style-filter"
+                value={mapStyleKey}
+                onChange={(e) => setMapStyleKey(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20"
+              >
+                {Object.values(MAP_STYLES).map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             <div className="mb-4">
               <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1.5" htmlFor="map-route-filter">
